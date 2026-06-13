@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GATES OF TOM — Mad Olympvs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cinzel+Decorative:wght@700&family=Pirata+One&family=Barlow:wght@300;400;600;700&family=Barlow+Semi+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --obsidian:#0a0807; --obsidian-2:#13100c; --ash:#1c1813; --ash-2:#272018;
+    --bone:#e8dec6; --bone-dim:#a99f86; --bone-faint:#6f685a;
+    --gold-1:#5a4416; --gold-2:#9a7b22; --gold:#c9a227; --gold-3:#e8c64a; --gold-hi:#f9edb4;
+    --oxblood:#6b1f2e; --oxblood-hi:#9c2f3f; --oxblood-deep:#2e0c12;
+    --ichor:#7fe3d2; --ichor-deep:#1f4f49;
+    --gold-foil:linear-gradient(135deg,#3a2c0e 0%,#8a6d1f 24%,#f2e2a8 47%,#b88e22 58%,#6e561a 78%,#cdaa34 100%);
+    --gold-grad:linear-gradient(150deg,var(--gold-1) 0%,var(--gold) 32%,var(--gold-hi) 50%,var(--gold) 64%,var(--gold-1) 100%);
+    --edge:rgba(201,162,39,.22); --edge-soft:rgba(201,162,39,.12);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:"Barlow",system-ui,sans-serif; color:var(--bone);
+    background:var(--obsidian);
+    background-image:
+      radial-gradient(120% 90% at 50% -8%, #1a140d 0%, var(--obsidian) 46%),
+      radial-gradient(80% 60% at 100% 100%, rgba(107,31,46,.10), transparent 60%);
+    background-attachment:fixed;
+    display:flex; flex-direction:column; align-items:center; min-height:100%;
+    -webkit-font-smoothing:antialiased; user-select:none; overflow-x:hidden;
+  }
+  /* grain + vignette */
+  .fx-grain,.fx-vig{position:fixed; inset:0; pointer-events:none; z-index:60;}
+  .fx-grain{opacity:.05; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  .fx-vig{box-shadow:inset 0 0 240px 40px rgba(0,0,0,.7);}
+
+  .metal{background:var(--gold-foil); -webkit-background-clip:text; background-clip:text;
+    color:transparent; -webkit-text-fill-color:transparent;}
+
+  header{width:100%; max-width:780px; text-align:center; padding:20px 12px 4px;}
+  .logo{font-family:"Cinzel Decorative",serif; font-weight:700; letter-spacing:.12em;
+    font-size:clamp(28px,6vw,46px); line-height:1;
+    background:var(--gold-foil); -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 0 34px rgba(201,162,39,.18); filter:drop-shadow(0 3px 0 var(--oxblood-deep));}
+  .subtitle{font-family:"Pirata One",cursive; font-size:clamp(15px,3vw,22px);
+    letter-spacing:.18em; color:var(--oxblood-hi); margin-top:6px; text-transform:uppercase;}
+
+  .fs-hud{display:none; gap:14px; margin:8px 0 2px; width:100%; max-width:780px;
+    padding:0 12px; justify-content:center; flex-wrap:wrap;}
+  .fs-hud.show{display:flex;}
+  .fs-pill{font-family:"Barlow Semi Condensed",sans-serif; text-transform:uppercase; letter-spacing:.18em;
+    font-size:12px; background:linear-gradient(180deg,var(--obsidian-2),var(--obsidian));
+    border:1px solid var(--oxblood); border-radius:20px; padding:6px 16px; color:var(--bone-dim);
+    box-shadow:0 0 16px rgba(107,31,46,.35);}
+  .fs-pill b{font-family:"Barlow",sans-serif; color:var(--gold-3); font-variant-numeric:tabular-nums;}
+
+  .stage{width:100%; max-width:780px; padding:10px 12px 0;}
+  .topbar{display:flex; justify-content:space-between; gap:12px; margin-bottom:12px;}
+  .stat{flex:1; background:linear-gradient(180deg,var(--obsidian-2),var(--obsidian));
+    border:1px solid var(--edge-soft); border-radius:10px; padding:9px 14px;}
+  .stat .label{font-family:"Barlow Semi Condensed",sans-serif; text-transform:uppercase;
+    letter-spacing:.22em; font-size:10px; color:var(--bone-faint);}
+  .stat .val{font-size:22px; font-weight:700; color:var(--gold-3); font-variant-numeric:tabular-nums;}
+  .stat.win .val{color:var(--ichor);}
+
+  .grid-frame{position:relative; border-radius:14px; padding:14px;
+    background:radial-gradient(120% 100% at 50% 0%, #1a140d, #0a0807 74%);
+    border:1px solid var(--edge);
+    box-shadow:inset 0 0 60px rgba(0,0,0,.7), 0 18px 50px rgba(0,0,0,.5);}
+  .grid{display:grid; grid-template-columns:repeat(6,1fr); grid-template-rows:repeat(5,1fr);
+    gap:6px; position:relative; aspect-ratio:6/5; overflow:hidden;}
+
+  /* pas de cadre : les symboles flottent en tuiles deplacables (style Gates of Olympus) */
+  .tile{position:relative; min-width:0; min-height:0; will-change:transform;
+    display:flex; align-items:center; justify-content:center;}
+  .tile .sym-img{width:92%; height:92%; object-fit:contain;
+    filter:drop-shadow(0 5px 8px rgba(0,0,0,.6));}
+  .tile.scatter .sym-img{filter:drop-shadow(0 0 16px rgba(127,227,210,.7)) drop-shadow(0 5px 8px rgba(0,0,0,.6));}
+  .tile.winglow .sym-img,.tile.winglow .mult-orb{
+    filter:drop-shadow(0 0 20px rgba(232,198,74,.95)) drop-shadow(0 0 9px rgba(232,198,74,.7));}
+
+  /* multiplier orb (demon orb, taille indexee sur la valeur) */
+  .mult{border-color:var(--oxblood-hi);}
+  .mult-orb{position:relative; display:flex; align-items:center; justify-content:center;
+    width:72%; height:72%; transform:scale(var(--ms,1));
+    transition:transform .2s cubic-bezier(.34,1.56,.64,1);}
+  .orb-core{width:100%; height:100%; border-radius:50%; position:relative;
+    background:radial-gradient(circle at 36% 30%, #fff6e0 2%, var(--gold-3) 22%, var(--gold) 42%, var(--oxblood) 84%, #1a0a0e 100%);
+    box-shadow:0 0 24px rgba(201,162,39,.5), inset -5px -7px 16px rgba(26,10,14,.7), inset 5px 6px 14px rgba(255,246,224,.55);
+    border:1px solid rgba(249,237,180,.55); display:flex; align-items:center; justify-content:center;}
+  .orb-core::after{content:""; position:absolute; width:24%; height:16%; left:20%; top:16%; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,255,255,.85), transparent 70%); filter:blur(1.5px);}
+  .orb-core .v{font-family:"Cinzel Decorative",serif; font-weight:700; font-size:clamp(11px,3.4vw,20px);
+    color:#2a0d12; text-shadow:0 1px 0 rgba(249,237,180,.55);}
+
+  /* dissolution du symbole gagnant */
+  @keyframes dissolve{
+    0%{opacity:1; transform:scale(1); filter:none;}
+    35%{opacity:.85; transform:scale(1.12); filter:brightness(1.6);}
+    100%{opacity:0; transform:scale(.45); filter:blur(4px) brightness(1.8);}
+  }
+  .tile.popping .sym-img,.tile.popping .mult-orb{animation:dissolve .42s ease-in forwards;}
+
+  /* bouffees de fumee (posees sur la grille, debordent les cellules) */
+  .smoke{position:absolute; pointer-events:none; border-radius:50%; z-index:5;
+    background:radial-gradient(circle, rgba(214,205,186,.6), rgba(120,110,95,.28) 46%, transparent 72%);
+    filter:blur(5px); will-change:transform,opacity;}
+  @keyframes puff{
+    0%{opacity:0; transform:translate(-50%,-50%) scale(.35);}
+    25%{opacity:.95;}
+    100%{opacity:0; transform:translate(var(--dx,-50%),-95%) scale(1.7);}
+  }
+  .smoke.go{animation:puff var(--life,.6s) ease-out forwards;}
+  .smoke.ichor{background:radial-gradient(circle, rgba(127,227,210,.5), rgba(31,79,73,.25) 46%, transparent 72%);}
+
+  /* controls */
+  .controls{display:flex; align-items:center; justify-content:center; gap:14px;
+    padding:18px 12px 12px; width:100%; max-width:780px; flex-wrap:wrap;}
+  .betbox{display:flex; align-items:center; gap:8px; background:var(--obsidian-2);
+    border:1px solid var(--edge-soft); border-radius:12px; padding:6px 8px;}
+  .betbox .label{font-family:"Barlow Semi Condensed",sans-serif; text-transform:uppercase;
+    letter-spacing:.16em; font-size:9px; color:var(--bone-faint);}
+  .betval{min-width:64px; text-align:center; font-weight:700; color:var(--gold-3); font-size:16px;
+    font-variant-numeric:tabular-nums;}
+  button{cursor:pointer; font-family:"Barlow Semi Condensed",sans-serif; color:var(--bone);
+    background:var(--ash); border:1px solid var(--edge-soft); border-radius:8px;
+    width:38px; height:38px; font-size:20px; font-weight:600; transition:.12s;}
+  button:hover{border-color:var(--gold); color:var(--gold-3);}
+  button:active{transform:scale(.92);}
+  button:disabled{opacity:.4; cursor:not-allowed;}
+
+  .spin{width:118px; height:64px; border-radius:50%; position:relative;
+    background:radial-gradient(circle at 42% 36%, #2a2014, #0a0807 78%);
+    border:0; color:transparent;
+    box-shadow:0 0 0 2px var(--obsidian), 0 0 0 4px var(--gold-2), 0 0 30px rgba(201,162,39,.34), inset 0 2px 14px rgba(0,0,0,.7);}
+  .spin::before{content:""; position:absolute; inset:-4px; border-radius:50%; z-index:-1;
+    background:conic-gradient(from 0deg, var(--gold-1),var(--gold-hi),var(--gold-1),var(--gold),var(--gold-hi),var(--gold-1));}
+  .spin::after{content:"SPIN"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:"Cinzel Decorative",serif; font-weight:700; letter-spacing:.18em; font-size:15px;
+    background:var(--gold-foil); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .spin:hover{filter:brightness(1.08);}
+  .spin.spinning{animation:spinpulse .6s infinite;}
+  @keyframes spinpulse{0%,100%{box-shadow:0 0 0 2px var(--obsidian),0 0 0 4px var(--gold-2),0 0 22px rgba(201,162,39,.4),inset 0 2px 14px rgba(0,0,0,.7);}
+    50%{box-shadow:0 0 0 2px var(--obsidian),0 0 0 4px var(--oxblood-hi),0 0 34px rgba(127,227,210,.4),inset 0 2px 14px rgba(0,0,0,.7);}}
+
+  .ante{width:auto; height:48px; padding:0 14px; border-radius:6px;
+    display:flex; align-items:center; gap:8px; text-transform:uppercase; letter-spacing:.18em;
+    font-size:12px; font-weight:600; color:var(--bone);
+    background:linear-gradient(180deg,#7d2330,#4a141d); border:1px solid var(--oxblood-hi);}
+  .ante:hover{filter:brightness(1.12); color:var(--bone);}
+  .ante-led{width:10px; height:10px; border-radius:50%; background:#2a1116;
+    box-shadow:inset 0 0 4px #000; transition:.15s;}
+  .ante.on{box-shadow:0 0 16px rgba(156,47,63,.6);}
+  .ante.on .ante-led{background:var(--ichor); box-shadow:0 0 10px var(--ichor);}
+
+  .buy{width:auto; height:48px; padding:0 14px; border-radius:6px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.05;
+    text-transform:uppercase; letter-spacing:.16em; font-size:12px; font-weight:600;
+    color:#180a0d; background:var(--gold-foil); border:1px solid var(--gold-hi);
+    box-shadow:0 4px 16px rgba(201,162,39,.3);}
+  .buy:hover{filter:brightness(1.07); color:#180a0d;}
+  .buy-cost{font-family:"Barlow",sans-serif; font-size:10px; font-weight:700; color:#3a1a0d;
+    font-variant-numeric:tabular-nums; letter-spacing:.04em;}
+
+  .info{width:auto; height:48px; padding:0 13px; border-radius:6px;
+    text-transform:uppercase; letter-spacing:.18em; font-size:12px; font-weight:600;
+    color:var(--gold-3); background:transparent; border:1px solid var(--edge);}
+  .info:hover{border-color:var(--gold); color:var(--gold-hi); background:rgba(201,162,39,.06);}
+
+  /* ---- fenetre liste des gains ---- */
+  .pt-overlay{position:fixed; inset:0; z-index:55; display:none; padding:24px;
+    align-items:center; justify-content:center; background:rgba(6,4,4,.85);}
+  .pt-overlay.show{display:flex;}
+  .pt-panel{width:100%; max-width:560px; max-height:86vh; display:flex; flex-direction:column;
+    background:radial-gradient(120% 100% at 50% 0%, #1a140d, #0a0807 78%);
+    border:1px solid var(--edge); border-radius:14px; box-shadow:0 30px 70px rgba(0,0,0,.6);
+    padding:20px 22px 24px;}
+  .pt-head{display:flex; align-items:center; justify-content:space-between;}
+  .pt-head h2{font-family:"Cinzel Decorative",serif; font-weight:700; font-size:22px;
+    background:var(--gold-foil); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .pt-close{width:34px; height:34px; border-radius:8px; font-size:16px; color:var(--bone-dim);
+    background:var(--ash); border:1px solid var(--edge-soft);}
+  .pt-close:hover{color:var(--gold-3); border-color:var(--gold);}
+  .pt-sub{font-family:"Barlow Semi Condensed",sans-serif; text-transform:uppercase;
+    letter-spacing:.16em; font-size:10px; color:var(--bone-faint); margin:4px 0 14px;}
+  .pt-body{overflow-y:auto; padding-right:6px;}
+  .pt-row{display:flex; align-items:center; gap:14px; padding:9px 0; border-bottom:1px solid var(--edge-soft);}
+  .pt-thumb{width:52px; height:52px; flex:0 0 52px; display:flex; align-items:center; justify-content:center;}
+  .pt-thumb img{width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 3px 5px rgba(0,0,0,.6));}
+  .pt-name{flex:1; font-family:"Cinzel",serif; font-size:14px; color:var(--bone);}
+  .pt-pays{display:flex; gap:14px; flex-wrap:wrap; justify-content:flex-end;}
+  .pt-pays span{font-family:"Barlow",sans-serif; font-size:13px; color:var(--gold-3);
+    font-variant-numeric:tabular-nums; text-align:right;}
+  .pt-pays b{display:block; font-family:"Barlow Semi Condensed",sans-serif; font-weight:600;
+    text-transform:uppercase; letter-spacing:.1em; font-size:9px; color:var(--bone-faint);}
+  .pt-mini-orb{width:46px; height:46px; border-radius:50%;
+    background:radial-gradient(circle at 36% 30%, #fff6e0 2%, var(--gold-3) 22%, var(--gold) 42%, var(--oxblood) 84%, #1a0a0e 100%);
+    box-shadow:inset -4px -5px 12px rgba(26,10,14,.7), inset 4px 5px 10px rgba(255,246,224,.5);
+    border:1px solid rgba(249,237,180,.5); display:flex; align-items:center; justify-content:center;
+    font-family:"Cinzel Decorative",serif; font-weight:700; font-size:12px; color:#2a0d12;}
+  .pt-rules{margin-top:16px; padding-top:14px; border-top:1px solid var(--edge);}
+  .pt-rules h3{font-family:"Cinzel",serif; font-size:14px; color:var(--gold-3); margin-bottom:8px;}
+  .pt-rules p{font-family:"Barlow",sans-serif; font-size:12.5px; color:var(--bone-dim);
+    line-height:1.6; margin:0;}
+  .pt-rules b{color:var(--bone);}
+
+  .footer-note{font-family:"Barlow",sans-serif; font-size:10px; color:var(--bone-faint);
+    max-width:780px; text-align:center; padding:6px 16px 26px; line-height:1.5;}
+
+  /* win banner */
+  .winbanner{position:fixed; top:34%; left:50%; transform:translate(-50%,-50%) scale(.6);
+    text-align:center; pointer-events:none; opacity:0; z-index:30; transition:.25s; padding:22px 40px;
+    border-radius:12px; border:1px solid var(--edge);
+    background:radial-gradient(120% 140% at 50% 0%, rgba(107,31,46,.6), rgba(10,8,7,.4));
+    box-shadow:0 0 60px rgba(0,0,0,.6);}
+  .winbanner.show{opacity:1; transform:translate(-50%,-50%) scale(1);}
+  .winbanner .tag{font-family:"Barlow Semi Condensed",sans-serif; letter-spacing:.34em;
+    text-transform:uppercase; font-size:13px; color:var(--gold-3);}
+  .winbanner .big{font-family:"Cinzel Decorative",serif; font-weight:700; font-size:48px; line-height:1.1;
+    background:var(--gold-foil); -webkit-background-clip:text; background-clip:text; color:transparent;}
+
+  /* free spins overlay */
+  .fs-overlay{position:fixed; inset:0; background:rgba(6,4,4,.9); z-index:40;
+    display:none; flex-direction:column; align-items:center; justify-content:center; gap:18px; text-align:center;}
+  .fs-overlay.show{display:flex;}
+  .fs-overlay .fs-orb{width:120px; height:120px; object-fit:contain;
+    filter:drop-shadow(0 0 34px rgba(127,227,210,.55)); animation:floaty 2.4s ease-in-out infinite;}
+  @keyframes floaty{0%,100%{transform:translateY(0) rotate(-2deg);}50%{transform:translateY(-10px) rotate(2deg);}}
+  .fs-overlay h2{font-family:"Cinzel Decorative",serif; font-weight:700; font-size:clamp(22px,5vw,32px);
+    letter-spacing:.06em; background:var(--gold-foil); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .fs-overlay p{font-family:"Barlow Semi Condensed",sans-serif; letter-spacing:.3em; text-transform:uppercase;
+    color:var(--ichor); font-size:14px;}
+  .fs-overlay button{width:auto; height:auto; padding:13px 30px; border-radius:6px;
+    font-family:"Barlow Semi Condensed",sans-serif; text-transform:uppercase; letter-spacing:.2em; font-weight:600;
+    color:#180a0d; background:var(--gold-foil); border:1px solid var(--gold-hi);}
+
+  /* responsive */
+  @media (max-width:560px){
+    .stage{padding:6px 8px 0;}
+    .grid-frame{padding:8px; border-radius:12px;}
+    .grid{gap:4px;}
+    .stat .val{font-size:18px;}
+    .controls{gap:8px; padding:12px 8px 8px;}
+    .spin{width:92px; height:54px;}
+    .spin::after{font-size:13px;}
+    .ante,.buy{height:44px; padding:0 10px; font-size:11px;}
+    .betbox{padding:4px 6px;}
+    button{width:34px; height:34px; font-size:18px;}
+    .betval{min-width:48px; font-size:14px;}
+    .winbanner .big{font-size:34px;}
+    .footer-note{font-size:9px;}
+  }
+  @media (max-width:380px){
+    .controls{gap:6px;}
+    .spin{width:78px; height:50px;}
+    .ante .ante-led{display:none;}
+  }
+</style>
+</head>
+<body>
+  <div class="fx-grain"></div>
+  <div class="fx-vig"></div>
+
+  <header>
+    <div class="logo">GATES OF TOM</div>
+    <div class="subtitle">Mad Olympvs</div>
+  </header>
+
+  <div class="fs-hud" id="fsHud">
+    <div class="fs-pill">FREE SPINS <b id="fsCount">0</b></div>
+    <div class="fs-pill">MVLTI TOTAL <b id="fsMult">x0</b></div>
+    <div class="fs-pill">GAIN <b id="fsWin">0</b></div>
+  </div>
+
+  <div class="stage">
+    <div class="topbar">
+      <div class="stat"><div class="label">Jetons</div><div class="val" id="balance">10 000</div></div>
+      <div class="stat win"><div class="label">Gain</div><div class="val" id="winval">0</div></div>
+    </div>
+    <div class="grid-frame">
+      <div class="grid" id="grid"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="info" id="payBtn" title="Liste des gains">GAINS</button>
+    <button class="ante" id="anteBtn" title="Mise +25%, double les chances de free spins">
+      <span class="ante-led"></span>ANTE
+    </button>
+    <div class="betbox">
+      <button id="betDown">−</button>
+      <div><div class="label">Mise</div><div class="betval" id="betval">20</div></div>
+      <button id="betUp">+</button>
+    </div>
+    <button class="spin" id="spinBtn">SPIN</button>
+    <button class="buy" id="buyBtn" title="Acheter les free spins">
+      BUY<span class="buy-cost" id="buyCost">2 000</span>
+    </button>
+  </div>
+
+  <div class="footer-note">
+    Jeu de démonstration en <b>jetons virtuels</b> — aucun argent réel, aucun gain retirable.
+    RTP ≈ 96 %, max win 5000×. Direction artistique « Mad Olympvs ».
+  </div>
+
+  <div class="winbanner" id="winBanner">
+    <div class="tag" id="winTag">GRAND</div>
+    <div class="big" id="winBig">x0</div>
+  </div>
+
+  <div class="pt-overlay" id="ptOverlay">
+    <div class="pt-panel">
+      <div class="pt-head">
+        <h2>Liste des gains</h2>
+        <button class="pt-close" id="ptClose">✕</button>
+      </div>
+      <div class="pt-sub">Gains exprimés en multiples de la mise totale.</div>
+      <div class="pt-body" id="ptBody"></div>
+    </div>
+  </div>
+
+  <div class="fs-overlay" id="fsOverlay">
+    <img class="fs-orb" id="fsOrb" alt="">
+    <h2 id="fsTitle">LE DIEU FOU S'ÉVEILLE</h2>
+    <p id="fsSub">15 FREE SPINS</p>
+    <button id="fsStart">DÉCHAÎNER</button>
+  </div>
+
+<script src="engine.js"></script>
+<script src="game.js"></script>
+</body>
+</html>

@@ -485,11 +485,22 @@ function multScale(v) {
   return Math.min(1.2, Math.max(0.7, s)).toFixed(3);
 }
 
-const BETS = [4, 10, 20, 40, 100, 200];
+// Échelle de mises totales façon Pragmatic Play (Gates of Olympus), étendue à 500.
+const BETS = [
+  0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 1.00,
+  1.20, 1.40, 1.60, 1.80, 2.00,
+  2.50, 3.00, 3.50, 4.00, 4.50, 5.00,
+  6, 7, 8, 9, 10,
+  12.50, 15, 17.50, 20,
+  25, 30, 35, 40, 45, 50,
+  60, 70, 80, 90, 100,
+  125, 150, 175, 200,
+  250, 300, 350, 400, 450, 500,
+];
 
 const state = {
-  balance: 10000,
-  betIndex: 2,
+  balance: 1000,
+  betIndex: 8,   // 1,00 par défaut
   busy: false,
   ante: false,
 };
@@ -521,7 +532,8 @@ const SYM_NAME = {
 };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const fmt = (n) => Math.round(n).toLocaleString("fr-FR");
+const round2 = (n) => Math.round(n * 100) / 100;
+const fmt = (n) => round2(n).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const bet = () => BETS[state.betIndex];
 const spinCost = () => bet() * (state.ante ? ANTE_COST_MULT : 1);
 const buyCost = () => bet() * BUY_COST_MULT;
@@ -753,14 +765,14 @@ async function runFreeSpins(bought = false) {
    ---------------------------------------------------------------------- */
 async function spin() {
   if (state.busy) return;
-  if (state.balance < spinCost()) { flashInsufficient(); return; }
+  if (state.balance < round2(spinCost())) { flashInsufficient(); return; }
   setBusy(true);
   spinBtn.classList.add("spinning");
 
   setAnte(state.ante);                // synchronise le moteur
-  state.balance -= spinCost();
+  state.balance = round2(state.balance - round2(spinCost()));
   balanceEl.textContent = fmt(state.balance);
-  winValEl.textContent = "0";
+  winValEl.textContent = fmt(0);
 
   await spinIntro();
 
@@ -785,9 +797,10 @@ async function spin() {
   // crediter
   let totalUnit = unitWin;
   if (totalUnit > 0) {
-    state.balance += totalUnit * bet();
+    const w = round2(totalUnit * bet());
+    state.balance = round2(state.balance + w);
     balanceEl.textContent = fmt(state.balance);
-    winValEl.textContent = fmt(totalUnit * bet());
+    winValEl.textContent = fmt(w);
     if (totalUnit >= 20) await showBanner(totalUnit);
   }
 
@@ -795,9 +808,10 @@ async function spin() {
   if (sc >= CFG.TRIGGER) {
     const fsUnit = await runFreeSpins();
     if (fsUnit > 0) {
-      state.balance += fsUnit * bet();
+      const w = round2(fsUnit * bet());
+      state.balance = round2(state.balance + w);
       balanceEl.textContent = fmt(state.balance);
-      winValEl.textContent = fmt(fsUnit * bet());
+      winValEl.textContent = fmt(w);
       if (fsUnit >= 20) await showBanner(fsUnit);
     }
   }
@@ -809,18 +823,19 @@ async function spin() {
 /* Bonus buy : payer pour entrer directement dans les free spins. */
 async function buyBonus() {
   if (state.busy) return;
-  if (state.balance < buyCost()) { flashInsufficient(); return; }
+  if (state.balance < round2(buyCost())) { flashInsufficient(); return; }
   setBusy(true);
   setAnte(false);                    // l'achat ignore l'ante
-  state.balance -= buyCost();
+  state.balance = round2(state.balance - round2(buyCost()));
   balanceEl.textContent = fmt(state.balance);
-  winValEl.textContent = "0";
+  winValEl.textContent = fmt(0);
 
   const fsUnit = await runFreeSpins(true);
   if (fsUnit > 0) {
-    state.balance += fsUnit * bet();
+    const w = round2(fsUnit * bet());
+    state.balance = round2(state.balance + w);
     balanceEl.textContent = fmt(state.balance);
-    winValEl.textContent = fmt(fsUnit * bet());
+    winValEl.textContent = fmt(w);
     if (fsUnit >= 20) await showBanner(fsUnit);
   }
   setBusy(false);

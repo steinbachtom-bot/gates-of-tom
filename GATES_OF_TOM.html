@@ -77,7 +77,19 @@
     display:flex; align-items:center; justify-content:center;}
   .tile .sym-img{width:92%; height:92%; object-fit:contain;
     filter:drop-shadow(0 5px 8px rgba(0,0,0,.6));}
-  .tile.scatter .sym-img{filter:drop-shadow(0 0 16px rgba(127,227,210,.7)) drop-shadow(0 5px 8px rgba(0,0,0,.6));}
+  /* Scatter : plus gros + aura dorée pulsante (la seule à rayonner au repos) */
+  .tile.scatter{z-index:2;}
+  .tile.scatter::before{content:""; position:absolute; left:50%; top:50%;
+    width:138%; height:138%; transform:translate(-50%,-50%); border-radius:50%;
+    pointer-events:none; z-index:-1;
+    background:radial-gradient(circle, rgba(249,237,180,.6), rgba(201,162,39,.34) 40%, rgba(201,162,39,.10) 60%, transparent 74%);
+    animation:scatterAura 1.6s ease-in-out infinite;}
+  @keyframes scatterAura{
+    0%,100%{opacity:.65; transform:translate(-50%,-50%) scale(.9);}
+    50%{opacity:1; transform:translate(-50%,-50%) scale(1.15);}
+  }
+  .tile.scatter .sym-img{width:108%; height:108%;
+    filter:drop-shadow(0 0 20px rgba(232,198,74,.9)) drop-shadow(0 0 10px rgba(249,237,180,.7)) drop-shadow(0 5px 8px rgba(0,0,0,.55));}
   .tile.winglow .sym-img,.tile.winglow .mult-orb{
     filter:drop-shadow(0 0 20px rgba(232,198,74,.95)) drop-shadow(0 0 9px rgba(232,198,74,.7));}
 
@@ -846,7 +858,31 @@ async function spin() {
   setBusy(false);
 }
 
-/* Bonus buy : payer pour entrer directement dans les free spins. */
+/* Grille de déclenchement : symboles aléatoires + exactement 4 scatters. */
+function makeTriggerGrid() {
+  const cells = Array.from({ length: CFG.CELLS }, () => ({
+    t: PAY_KEYS[Math.floor(Math.random() * PAY_KEYS.length)], v: 0,
+  }));
+  const pos = new Set();
+  while (pos.size < CFG.TRIGGER) pos.add(Math.floor(Math.random() * CFG.CELLS));
+  pos.forEach((i) => { cells[i] = { t: "SCATTER", v: 0 }; });
+  return cells;
+}
+
+/* Tour d'achat : on montre les 4 scatters qui tombent et déclenchent le bonus. */
+async function animateTriggerSpin() {
+  const cells = makeTriggerGrid();
+  dropIn(cells);
+  await sleep(hasLayout() ? dur(760) : 0);
+  if (hasLayout()) {
+    for (let i = 0; i < CFG.CELLS; i++) {
+      if (cells[i].t === "SCATTER" && tileAt[i]) tileAt[i].classList.add("winglow");
+    }
+    await sleep(dur(620));
+  }
+}
+
+/* Bonus buy : payer, montrer le tour des 4 scatters, puis entrer dans les free spins. */
 async function buyBonus() {
   if (state.busy) return;
   if (state.balance < round2(buyCost())) { flashInsufficient(); return; }
@@ -856,6 +892,7 @@ async function buyBonus() {
   balanceEl.textContent = fmt(state.balance);
   winValEl.textContent = fmt(0);
 
+  await animateTriggerSpin();          // tour avec les 4 scatters qui tombent
   const fsUnit = await runFreeSpins(true);
   if (fsUnit > 0) {
     const w = round2(fsUnit * bet());

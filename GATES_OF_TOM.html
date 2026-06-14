@@ -145,15 +145,24 @@
   @keyframes spinpulse{0%,100%{box-shadow:0 0 0 2px var(--obsidian),0 0 0 4px var(--gold-2),0 0 22px rgba(201,162,39,.4),inset 0 2px 14px rgba(0,0,0,.7);}
     50%{box-shadow:0 0 0 2px var(--obsidian),0 0 0 4px var(--oxblood-hi),0 0 34px rgba(127,227,210,.4),inset 0 2px 14px rgba(0,0,0,.7);}}
 
-  .ante{width:auto; height:48px; padding:0 14px; border-radius:6px;
-    display:flex; align-items:center; gap:8px; text-transform:uppercase; letter-spacing:.18em;
-    font-size:12px; font-weight:600; color:var(--bone);
+  .ante{width:auto; height:48px; padding:0 13px; border-radius:6px;
+    display:flex; align-items:center; gap:9px; color:var(--bone);
     background:linear-gradient(180deg,#7d2330,#4a141d); border:1px solid var(--oxblood-hi);}
   .ante:hover{filter:brightness(1.12); color:var(--bone);}
-  .ante-led{width:10px; height:10px; border-radius:50%; background:#2a1116;
+  .ante-led{width:10px; height:10px; flex:0 0 10px; border-radius:50%; background:#2a1116;
     box-shadow:inset 0 0 4px #000; transition:.15s;}
+  .ante-txt{display:flex; flex-direction:column; align-items:flex-start; line-height:1.08;}
+  .ante-txt b{font-family:"Barlow Semi Condensed",sans-serif; font-weight:600;
+    text-transform:uppercase; letter-spacing:.1em; font-size:11px;}
+  .ante-txt small{font-family:"Barlow",sans-serif; font-weight:700; font-size:10px;
+    color:var(--gold-3); letter-spacing:.02em; font-variant-numeric:tabular-nums;}
   .ante.on{box-shadow:0 0 16px rgba(156,47,63,.6);}
   .ante.on .ante-led{background:var(--ichor); box-shadow:0 0 10px var(--ichor);}
+
+  .speedbtn{display:flex; align-items:center; gap:7px;}
+  .spd-ico{font-size:15px; line-height:1; color:var(--gold);}
+  .speedbtn.turbo{border-color:var(--gold); color:var(--gold-hi); box-shadow:0 0 12px rgba(201,162,39,.3);}
+  .speedbtn.turbo .spd-ico{color:var(--gold-hi);}
 
   .buy{width:auto; height:48px; padding:0 14px; border-radius:6px;
     display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.05;
@@ -286,8 +295,12 @@
 
   <div class="controls">
     <button class="info" id="payBtn" title="Liste des gains">GAINS</button>
-    <button class="ante" id="anteBtn" title="Mise +25%, double les chances de free spins">
-      <span class="ante-led"></span>ANTE
+    <button class="info speedbtn" id="speedBtn" title="Vitesse des tours">
+      <span class="spd-ico">»</span><span id="speedLbl">NORMAL</span>
+    </button>
+    <button class="ante" id="anteBtn" title="Double les chances de déclencher les free spins (mise +25%)">
+      <span class="ante-led"></span>
+      <span class="ante-txt"><b>+ de free spins</b><small id="anteCost">+0,25</small></span>
     </button>
     <div class="betbox">
       <button id="betDown">−</button>
@@ -503,8 +516,18 @@ const state = {
   betIndex: 8,   // 1,00 par défaut
   busy: false,
   ante: false,
+  speedIndex: 0, // NORMAL par défaut
 };
 const BUY_COST_MULT = 100; // achat des free spins = 100x la mise
+
+// Vitesses : multiplicateur applique a toutes les durees d'animation.
+// NORMAL = de base (le plus lent), TURBO = l'ancienne vitesse rapide.
+const SPEEDS = [
+  { name: "NORMAL", mult: 2.1 },
+  { name: "RAPIDE", mult: 1.5 },
+  { name: "TURBO", mult: 1.0 },
+];
+const dur = (ms) => Math.round(ms * SPEEDS[state.speedIndex].mult);
 
 // --- DOM refs ---
 const $ = (id) => document.getElementById(id);
@@ -523,6 +546,9 @@ const buyCostEl = $("buyCost");
 const payBtn = $("payBtn");
 const ptOverlay = $("ptOverlay");
 const ptClose = $("ptClose");
+const speedBtn = $("speedBtn");
+const speedLbl = $("speedLbl");
+const anteCostEl = $("anteCost");
 
 /* Noms d'affichage (selon l'art applique) */
 const SYM_NAME = {
@@ -585,8 +611,8 @@ function dropIn(cells) {
     for (let c = 0; c < CFG.REELS; c++) {
       for (let r = 0; r < CFG.ROWS; r++) {
         const t = tileAt[idx(c, r)];
-        const delay = c * 45 + (CFG.ROWS - 1 - r) * 26; // gauche->droite, remplit par le bas
-        t.style.transition = `transform .42s ${DROP_EASE} ${delay}ms`;
+        const delay = dur(c * 45 + (CFG.ROWS - 1 - r) * 26); // gauche->droite, remplit par le bas
+        t.style.transition = `transform ${dur(420)}ms ${DROP_EASE} ${delay}ms`;
         t.style.transform = "translateY(0)";
       }
     }
@@ -596,9 +622,9 @@ function dropIn(cells) {
 /* Disparition des gagnants : lueur + fumee + dissolution, puis retrait. */
 async function clearWinners(winCells) {
   winCells.forEach((i) => { const t = tileAt[i]; if (t) t.classList.add("winglow"); });
-  await sleep(220);
+  await sleep(dur(220));
   winCells.forEach((i) => { const t = tileAt[i]; if (t) { puffSmoke(t); t.classList.add("popping"); } });
-  await sleep(430);
+  await sleep(dur(430));
   winCells.forEach((i) => { const t = tileAt[i]; if (t) t.remove(); tileAt[i] = null; });
 }
 
@@ -642,15 +668,15 @@ async function tumbleTo(nextCells) {
 
   let maxDelay = 0;
   firsts.forEach((_, t) => {                     // play survivants
-    t.style.transition = `transform .38s ${DROP_EASE}`;
+    t.style.transition = `transform ${dur(380)}ms ${DROP_EASE}`;
     t.style.transform = "translateY(0)";
   });
   created.forEach(({ t, r }) => {                // play nouveaux (vague)
-    const delay = r * 32; if (delay > maxDelay) maxDelay = delay;
-    t.style.transition = `transform .42s ${DROP_EASE} ${delay}ms`;
+    const delay = dur(r * 32); if (delay > maxDelay) maxDelay = delay;
+    t.style.transition = `transform ${dur(420)}ms ${DROP_EASE} ${delay}ms`;
     t.style.transform = "translateY(0)";
   });
-  await sleep(440 + maxDelay);
+  await sleep(dur(440) + maxDelay);
 }
 
 /* Bouffee de fumee posee sur la grille (deborde la tuile). */
@@ -682,7 +708,7 @@ async function animateRound(round, onPartial) {
   const frames = round.frames;
   let unitWin = 0;
   dropIn(frames[0].cells);              // descente initiale (toutes les colonnes)
-  await sleep(hasLayout() ? 760 : 0);
+  await sleep(hasLayout() ? dur(760) : 0);
   let i = 0;
   while (frames[i] && frames[i].winCells.length) {
     unitWin += frames[i].stepWin;
@@ -911,6 +937,12 @@ function buildPaytable() {
 function updateBet() {
   betValEl.textContent = fmt(spinCost());
   buyCostEl.textContent = fmt(buyCost());
+  if (anteCostEl) anteCostEl.textContent = "+" + fmt(bet() * (ANTE_COST_MULT - 1));
+}
+
+function updateSpeed() {
+  speedLbl.textContent = SPEEDS[state.speedIndex].name;
+  speedBtn.classList.toggle("turbo", SPEEDS[state.speedIndex].name === "TURBO");
 }
 $("betUp").addEventListener("click", () => {
   if (state.busy) return;
@@ -928,6 +960,11 @@ anteBtn.addEventListener("click", () => {
   updateBet();
 });
 buyBtn.addEventListener("click", buyBonus);
+speedBtn.addEventListener("click", () => {
+  if (state.busy) return;
+  state.speedIndex = (state.speedIndex + 1) % SPEEDS.length;
+  updateSpeed();
+});
 payBtn.addEventListener("click", () => ptOverlay.classList.add("show"));
 ptClose.addEventListener("click", () => ptOverlay.classList.remove("show"));
 ptOverlay.addEventListener("click", (e) => { if (e.target === ptOverlay) ptOverlay.classList.remove("show"); });
@@ -943,6 +980,7 @@ if (fsOrb) fsOrb.src = symSrc("SCATTER");
 dropIn(Array.from({ length: CFG.CELLS }, newCell));
 buildPaytable();
 updateBet();
+updateSpeed();
 balanceEl.textContent = fmt(state.balance);
 
 </script>

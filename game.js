@@ -46,8 +46,18 @@ const state = {
   betIndex: 8,   // 1,00 par défaut
   busy: false,
   ante: false,
+  speedIndex: 0, // NORMAL par défaut
 };
 const BUY_COST_MULT = 100; // achat des free spins = 100x la mise
+
+// Vitesses : multiplicateur applique a toutes les durees d'animation.
+// NORMAL = de base (le plus lent), TURBO = l'ancienne vitesse rapide.
+const SPEEDS = [
+  { name: "NORMAL", mult: 2.1 },
+  { name: "RAPIDE", mult: 1.5 },
+  { name: "TURBO", mult: 1.0 },
+];
+const dur = (ms) => Math.round(ms * SPEEDS[state.speedIndex].mult);
 
 // --- DOM refs ---
 const $ = (id) => document.getElementById(id);
@@ -66,6 +76,9 @@ const buyCostEl = $("buyCost");
 const payBtn = $("payBtn");
 const ptOverlay = $("ptOverlay");
 const ptClose = $("ptClose");
+const speedBtn = $("speedBtn");
+const speedLbl = $("speedLbl");
+const anteCostEl = $("anteCost");
 
 /* Noms d'affichage (selon l'art applique) */
 const SYM_NAME = {
@@ -128,8 +141,8 @@ function dropIn(cells) {
     for (let c = 0; c < CFG.REELS; c++) {
       for (let r = 0; r < CFG.ROWS; r++) {
         const t = tileAt[idx(c, r)];
-        const delay = c * 45 + (CFG.ROWS - 1 - r) * 26; // gauche->droite, remplit par le bas
-        t.style.transition = `transform .42s ${DROP_EASE} ${delay}ms`;
+        const delay = dur(c * 45 + (CFG.ROWS - 1 - r) * 26); // gauche->droite, remplit par le bas
+        t.style.transition = `transform ${dur(420)}ms ${DROP_EASE} ${delay}ms`;
         t.style.transform = "translateY(0)";
       }
     }
@@ -139,9 +152,9 @@ function dropIn(cells) {
 /* Disparition des gagnants : lueur + fumee + dissolution, puis retrait. */
 async function clearWinners(winCells) {
   winCells.forEach((i) => { const t = tileAt[i]; if (t) t.classList.add("winglow"); });
-  await sleep(220);
+  await sleep(dur(220));
   winCells.forEach((i) => { const t = tileAt[i]; if (t) { puffSmoke(t); t.classList.add("popping"); } });
-  await sleep(430);
+  await sleep(dur(430));
   winCells.forEach((i) => { const t = tileAt[i]; if (t) t.remove(); tileAt[i] = null; });
 }
 
@@ -185,15 +198,15 @@ async function tumbleTo(nextCells) {
 
   let maxDelay = 0;
   firsts.forEach((_, t) => {                     // play survivants
-    t.style.transition = `transform .38s ${DROP_EASE}`;
+    t.style.transition = `transform ${dur(380)}ms ${DROP_EASE}`;
     t.style.transform = "translateY(0)";
   });
   created.forEach(({ t, r }) => {                // play nouveaux (vague)
-    const delay = r * 32; if (delay > maxDelay) maxDelay = delay;
-    t.style.transition = `transform .42s ${DROP_EASE} ${delay}ms`;
+    const delay = dur(r * 32); if (delay > maxDelay) maxDelay = delay;
+    t.style.transition = `transform ${dur(420)}ms ${DROP_EASE} ${delay}ms`;
     t.style.transform = "translateY(0)";
   });
-  await sleep(440 + maxDelay);
+  await sleep(dur(440) + maxDelay);
 }
 
 /* Bouffee de fumee posee sur la grille (deborde la tuile). */
@@ -225,7 +238,7 @@ async function animateRound(round, onPartial) {
   const frames = round.frames;
   let unitWin = 0;
   dropIn(frames[0].cells);              // descente initiale (toutes les colonnes)
-  await sleep(hasLayout() ? 760 : 0);
+  await sleep(hasLayout() ? dur(760) : 0);
   let i = 0;
   while (frames[i] && frames[i].winCells.length) {
     unitWin += frames[i].stepWin;
@@ -454,6 +467,12 @@ function buildPaytable() {
 function updateBet() {
   betValEl.textContent = fmt(spinCost());
   buyCostEl.textContent = fmt(buyCost());
+  if (anteCostEl) anteCostEl.textContent = "+" + fmt(bet() * (ANTE_COST_MULT - 1));
+}
+
+function updateSpeed() {
+  speedLbl.textContent = SPEEDS[state.speedIndex].name;
+  speedBtn.classList.toggle("turbo", SPEEDS[state.speedIndex].name === "TURBO");
 }
 $("betUp").addEventListener("click", () => {
   if (state.busy) return;
@@ -471,6 +490,11 @@ anteBtn.addEventListener("click", () => {
   updateBet();
 });
 buyBtn.addEventListener("click", buyBonus);
+speedBtn.addEventListener("click", () => {
+  if (state.busy) return;
+  state.speedIndex = (state.speedIndex + 1) % SPEEDS.length;
+  updateSpeed();
+});
 payBtn.addEventListener("click", () => ptOverlay.classList.add("show"));
 ptClose.addEventListener("click", () => ptOverlay.classList.remove("show"));
 ptOverlay.addEventListener("click", (e) => { if (e.target === ptOverlay) ptOverlay.classList.remove("show"); });
@@ -486,4 +510,5 @@ if (fsOrb) fsOrb.src = symSrc("SCATTER");
 dropIn(Array.from({ length: CFG.CELLS }, newCell));
 buildPaytable();
 updateBet();
+updateSpeed();
 balanceEl.textContent = fmt(state.balance);

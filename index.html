@@ -145,15 +145,24 @@
   @keyframes spinpulse{0%,100%{box-shadow:0 0 0 2px var(--obsidian),0 0 0 4px var(--gold-2),0 0 22px rgba(201,162,39,.4),inset 0 2px 14px rgba(0,0,0,.7);}
     50%{box-shadow:0 0 0 2px var(--obsidian),0 0 0 4px var(--oxblood-hi),0 0 34px rgba(127,227,210,.4),inset 0 2px 14px rgba(0,0,0,.7);}}
 
-  .ante{width:auto; height:48px; padding:0 14px; border-radius:6px;
-    display:flex; align-items:center; gap:8px; text-transform:uppercase; letter-spacing:.18em;
-    font-size:12px; font-weight:600; color:var(--bone);
+  .ante{width:auto; height:48px; padding:0 13px; border-radius:6px;
+    display:flex; align-items:center; gap:9px; color:var(--bone);
     background:linear-gradient(180deg,#7d2330,#4a141d); border:1px solid var(--oxblood-hi);}
   .ante:hover{filter:brightness(1.12); color:var(--bone);}
-  .ante-led{width:10px; height:10px; border-radius:50%; background:#2a1116;
+  .ante-led{width:10px; height:10px; flex:0 0 10px; border-radius:50%; background:#2a1116;
     box-shadow:inset 0 0 4px #000; transition:.15s;}
+  .ante-txt{display:flex; flex-direction:column; align-items:flex-start; line-height:1.08;}
+  .ante-txt b{font-family:"Barlow Semi Condensed",sans-serif; font-weight:600;
+    text-transform:uppercase; letter-spacing:.1em; font-size:11px;}
+  .ante-txt small{font-family:"Barlow",sans-serif; font-weight:700; font-size:10px;
+    color:var(--gold-3); letter-spacing:.02em; font-variant-numeric:tabular-nums;}
   .ante.on{box-shadow:0 0 16px rgba(156,47,63,.6);}
   .ante.on .ante-led{background:var(--ichor); box-shadow:0 0 10px var(--ichor);}
+
+  .speedbtn{display:flex; align-items:center; gap:7px;}
+  .spd-ico{font-size:15px; line-height:1; color:var(--gold);}
+  .speedbtn.turbo{border-color:var(--gold); color:var(--gold-hi); box-shadow:0 0 12px rgba(201,162,39,.3);}
+  .speedbtn.turbo .spd-ico{color:var(--gold-hi);}
 
   .buy{width:auto; height:48px; padding:0 14px; border-radius:6px;
     display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.05;
@@ -286,8 +295,12 @@
 
   <div class="controls">
     <button class="info" id="payBtn" title="Liste des gains">GAINS</button>
-    <button class="ante" id="anteBtn" title="Mise +25%, double les chances de free spins">
-      <span class="ante-led"></span>ANTE
+    <button class="info speedbtn" id="speedBtn" title="Vitesse des tours">
+      <span class="spd-ico">»</span><span id="speedLbl">NORMAL</span>
+    </button>
+    <button class="ante" id="anteBtn" title="Double les chances de déclencher les free spins (mise +25%)">
+      <span class="ante-led"></span>
+      <span class="ante-txt"><b>+ de free spins</b><small id="anteCost">+0,25</small></span>
     </button>
     <div class="betbox">
       <button id="betDown">−</button>

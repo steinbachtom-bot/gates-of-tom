@@ -376,7 +376,31 @@ async function spin() {
   setBusy(false);
 }
 
-/* Bonus buy : payer pour entrer directement dans les free spins. */
+/* Grille de déclenchement : symboles aléatoires + exactement 4 scatters. */
+function makeTriggerGrid() {
+  const cells = Array.from({ length: CFG.CELLS }, () => ({
+    t: PAY_KEYS[Math.floor(Math.random() * PAY_KEYS.length)], v: 0,
+  }));
+  const pos = new Set();
+  while (pos.size < CFG.TRIGGER) pos.add(Math.floor(Math.random() * CFG.CELLS));
+  pos.forEach((i) => { cells[i] = { t: "SCATTER", v: 0 }; });
+  return cells;
+}
+
+/* Tour d'achat : on montre les 4 scatters qui tombent et déclenchent le bonus. */
+async function animateTriggerSpin() {
+  const cells = makeTriggerGrid();
+  dropIn(cells);
+  await sleep(hasLayout() ? dur(760) : 0);
+  if (hasLayout()) {
+    for (let i = 0; i < CFG.CELLS; i++) {
+      if (cells[i].t === "SCATTER" && tileAt[i]) tileAt[i].classList.add("winglow");
+    }
+    await sleep(dur(620));
+  }
+}
+
+/* Bonus buy : payer, montrer le tour des 4 scatters, puis entrer dans les free spins. */
 async function buyBonus() {
   if (state.busy) return;
   if (state.balance < round2(buyCost())) { flashInsufficient(); return; }
@@ -386,6 +410,7 @@ async function buyBonus() {
   balanceEl.textContent = fmt(state.balance);
   winValEl.textContent = fmt(0);
 
+  await animateTriggerSpin();          // tour avec les 4 scatters qui tombent
   const fsUnit = await runFreeSpins(true);
   if (fsUnit > 0) {
     const w = round2(fsUnit * bet());

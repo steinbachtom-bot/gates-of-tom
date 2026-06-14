@@ -532,6 +532,22 @@ document.addEventListener("keydown", (e) => { if (e.code === "Space") { e.preven
 const fsOrb = $("fsOrb");
 if (fsOrb) fsOrb.src = symSrc("SCATTER");
 
+// Braises dorées du décor
+const emberLayer = $("emberLayer");
+if (emberLayer) {
+  for (let i = 0; i < 16; i++) {
+    const e = document.createElement("div");
+    e.className = "ember";
+    const size = 2 + Math.random() * 2.6;
+    e.style.left = (Math.random() * 100) + "%";
+    e.style.width = size + "px";
+    e.style.height = size + "px";
+    e.style.animationDuration = (7 + Math.random() * 9) + "s";
+    e.style.animationDelay = (-Math.random() * 9) + "s";
+    emberLayer.appendChild(e);
+  }
+}
+
 dropIn(Array.from({ length: CFG.CELLS }, newCell));
 buildPaytable();
 updateBet();

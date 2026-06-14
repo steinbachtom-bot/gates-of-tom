@@ -36,6 +36,45 @@
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
   .fx-vig{box-shadow:inset 0 0 240px 40px rgba(0,0,0,.7);}
 
+  /* ---- Décor Olympe (CSS/SVG), derrière le jeu ---- */
+  .scene{position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none;}
+  .scene .glow{position:absolute; left:50%; top:-12%; transform:translateX(-50%);
+    width:150%; height:72%;
+    background:radial-gradient(ellipse at 50% 0%, rgba(201,162,39,.22), rgba(107,31,46,.12) 42%, transparent 72%);}
+  .scene .rays{position:absolute; left:50%; top:-30%; transform:translateX(-50%) rotate(0deg);
+    width:170%; height:135%; mix-blend-mode:screen; opacity:.4;
+    background:repeating-conic-gradient(from 0deg at 50% 0%, rgba(249,237,180,.07) 0deg 2.2deg, transparent 2.2deg 8deg);
+    animation:rayswing 26s ease-in-out infinite;}
+  @keyframes rayswing{0%,100%{transform:translateX(-50%) rotate(-3deg);}50%{transform:translateX(-50%) rotate(3deg);}}
+  .scene .haze{position:absolute; left:0; right:0; bottom:0; height:46%;
+    background:radial-gradient(120% 100% at 50% 100%, rgba(107,31,46,.28), rgba(123,47,247,.06) 45%, transparent 72%);}
+  .scene .cloud{position:absolute; border-radius:50%; filter:blur(48px); opacity:.5;
+    background:radial-gradient(circle, rgba(36,28,18,.7), transparent 70%);}
+  .scene .cloud.a{width:60vw; height:36vw; left:-12vw; top:16%; animation:drift1 42s ease-in-out infinite;}
+  .scene .cloud.b{width:54vw; height:32vw; right:-10vw; top:40%; animation:drift2 54s ease-in-out infinite;}
+  @keyframes drift1{0%,100%{transform:translateX(0);}50%{transform:translateX(42px);}}
+  @keyframes drift2{0%,100%{transform:translateX(0);}50%{transform:translateX(-46px);}}
+  .scene .col{position:absolute; bottom:0; width:96px; height:86%; opacity:.5; filter:blur(.5px);
+    background:
+      repeating-linear-gradient(90deg, rgba(0,0,0,.25) 0 2px, transparent 2px 12px),
+      linear-gradient(90deg, rgba(16,12,9,0), rgba(46,37,26,.78) 26%, rgba(74,60,40,.7) 50%, rgba(46,37,26,.78) 74%, rgba(16,12,9,0));}
+  .scene .col.l{left:5%;}
+  .scene .col.r{right:5%;}
+  .scene .col::before{content:""; position:absolute; top:0; left:-14%; width:128%; height:5%;
+    background:linear-gradient(180deg, rgba(74,60,40,.85), rgba(30,24,16,.4)); border-radius:3px;}
+  @media (max-width:1024px){ .scene .col{display:none;} }
+
+  .ember{position:absolute; bottom:-12px; border-radius:50%;
+    background:radial-gradient(circle, var(--gold-hi), var(--gold) 55%, transparent 75%);
+    box-shadow:0 0 7px rgba(232,198,74,.8); opacity:0;
+    animation-name:rise; animation-timing-function:linear; animation-iteration-count:infinite;}
+  @keyframes rise{
+    0%{transform:translateY(0) translateX(0) scale(1); opacity:0;}
+    12%{opacity:.95;}
+    85%{opacity:.55;}
+    100%{transform:translateY(-104vh) translateX(26px) scale(.7); opacity:0;}
+  }
+
   .metal{background:var(--gold-foil); -webkit-background-clip:text; background-clip:text;
     color:transparent; -webkit-text-fill-color:transparent;}
 
@@ -281,6 +320,16 @@
 </style>
 </head>
 <body>
+  <div class="scene">
+    <div class="rays"></div>
+    <div class="glow"></div>
+    <div class="cloud a"></div>
+    <div class="cloud b"></div>
+    <div class="col l"></div>
+    <div class="col r"></div>
+    <div class="haze"></div>
+    <div id="emberLayer"></div>
+  </div>
   <div class="fx-grain"></div>
   <div class="fx-vig"></div>
 

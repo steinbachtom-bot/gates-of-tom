@@ -273,7 +273,7 @@ const balanceEl = $("balance");
 const winValEl = $("winval");
 const betValEl = $("betval");
 const spinBtn = $("spinBtn");
-const winBanner = $("winBanner");
+const winBanner = $("bigWin");
 const fsOverlay = $("fsOverlay");
 const fsHud = $("fsHud");
 
@@ -484,20 +484,66 @@ async function animateRound(round, onPartial) {
 async function spinIntro() { /* la descente est geree par animateRound/dropIn */ }
 
 /* ----------------------------------------------------------------------
-   Banniere de gain
+   Écran Big Win : vidéo en fond + libellé de palier + montant qui défile
+   (unitWin = gain en multiples de la mise)
    ---------------------------------------------------------------------- */
+function bigWinTier(u) {
+  if (u >= 500) return "DÉMENTIEL";
+  if (u >= 100) return "OLYMPIEN";
+  if (u >= 50) return "ÉNORME";
+  return "GRAND";
+}
+const bwVideo = $("bwVideo");
+const bwTag = $("bwTag");
+const bwAmount = $("bwAmount");
+
 async function showBanner(unitWin) {
-  let tag = "GRAND";
-  if (unitWin >= 500) tag = "DÉMENTIEL";
-  else if (unitWin >= 100) tag = "OLYMPIEN";
-  else if (unitWin >= 50) tag = "ÉNORME";
-  $("winBig").textContent = "x" + (Math.round(unitWin * 10) / 10);
-  $("winTag").textContent = tag;
+  const chips = round2(unitWin * bet());
+  bwTag.textContent = bigWinTier(unitWin);
   Snd.bigWin();
+
+  // headless / pas de DOM animable : on ne joue pas l'écran
+  if (typeof requestAnimationFrame !== "function" || !hasLayout()) return;
+
+  bwAmount.textContent = fmt(0);
   winBanner.classList.add("show");
-  await sleep(1600);
+  try { bwVideo.currentTime = 0; const p = bwVideo.play(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* ignore */ }
+
+  // clic pour passer
+  let skipped = false;
+  const onSkip = () => { skipped = true; };
+  winBanner.addEventListener("click", onSkip);
+
+  // compteur qui défile (ease-out)
+  const T = 3000, t0 = performance.now();
+  await new Promise((res) => {
+    function step(nowT) {
+      if (skipped) { res(); return; }
+      const k = Math.min(1, (nowT - t0) / T);
+      const e = 1 - Math.pow(1 - k, 3);
+      bwAmount.textContent = fmt(chips * e);
+      if (k < 1) requestAnimationFrame(step); else res();
+    }
+    requestAnimationFrame(step);
+  });
+  bwAmount.textContent = fmt(chips);
+
+  // garder l'écran jusqu'à la fin de la vidéo (ou clic pour passer)
+  if (!skipped) {
+    await new Promise((res) => {
+      let iv, safety;
+      const finish = () => { clearInterval(iv); clearTimeout(safety); res(); };
+      iv = setInterval(() => { if (skipped) finish(); }, 100);
+      bwVideo.addEventListener("ended", finish, { once: true });
+      const d = (bwVideo.duration && isFinite(bwVideo.duration)) ? bwVideo.duration : 15;
+      safety = setTimeout(finish, Math.max(800, (d - (bwVideo.currentTime || 0)) * 1000 + 400));
+    });
+  }
+
+  winBanner.removeEventListener("click", onSkip);
   winBanner.classList.remove("show");
-  await sleep(250);
+  try { bwVideo.pause(); } catch (e) { /* ignore */ }
+  await sleep(300);
 }
 
 /* ----------------------------------------------------------------------

@@ -37,6 +37,14 @@ if os.path.exists(decor):
     html = html.replace('src="assets/decor/bg_hades_web.jpg"',
                         'src="data:image/jpeg;base64,' + b + '"')
 
+# Embarquer la vidéo Big Win en data-URI
+bw = os.path.join(ROOT, "assets/decor/bigwin.mp4")
+if os.path.exists(bw):
+    with open(bw, "rb") as f:
+        b = base64.b64encode(f.read()).decode("ascii")
+    html = html.replace('src="assets/decor/bigwin.mp4"',
+                        'src="data:video/mp4;base64,' + b + '"')
+
 # Embarquer les sons (clic, whoosh) en data-URI
 for path, token in [("assets/audio/click.mp3", '"assets/audio/click.mp3"'),
                     ("assets/audio/whoosh_spin.mp3", '"assets/audio/whoosh_spin.mp3"'),

@@ -218,6 +218,8 @@
   .ante.on{box-shadow:0 0 16px rgba(156,47,63,.6);}
   .ante.on .ante-led{background:var(--ichor); box-shadow:0 0 10px var(--ichor);}
 
+  .sndbtn{min-width:42px; font-size:16px; line-height:1;}
+  .sndbtn.muted{color:var(--bone-faint); border-color:var(--edge-soft); opacity:.65; text-decoration:line-through;}
   .speedbtn{display:flex; align-items:center; gap:7px;}
   .spd-ico{font-size:15px; line-height:1; color:var(--gold);}
   .speedbtn.turbo{border-color:var(--gold); color:var(--gold-hi); box-shadow:0 0 12px rgba(201,162,39,.3);}
@@ -355,6 +357,7 @@
 
   <div class="controls">
     <button class="info" id="payBtn" title="Liste des gains">GAINS</button>
+    <button class="info sndbtn" id="soundBtn" title="Son">♪</button>
     <button class="info speedbtn" id="speedBtn" title="Vitesse des tours">
       <span class="spd-ico">»</span><span id="speedLbl">NORMAL</span>
     </button>

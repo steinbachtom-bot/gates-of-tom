@@ -37,6 +37,15 @@ if os.path.exists(decor):
     html = html.replace('src="assets/decor/bg_hades_web.jpg"',
                         'src="data:image/jpeg;base64,' + b + '"')
 
+# Embarquer les sons (clic, whoosh) en data-URI
+for path, token in [("assets/audio/click.mp3", '"assets/audio/click.mp3"'),
+                    ("assets/audio/whoosh_spin.mp3", '"assets/audio/whoosh_spin.mp3"')]:
+    full = os.path.join(ROOT, path)
+    if os.path.exists(full):
+        with open(full, "rb") as f:
+            b = base64.b64encode(f.read()).decode("ascii")
+        html = html.replace(token, '"data:audio/mpeg;base64,' + b + '"')
+
 out = os.path.join(ROOT, "GATES_OF_TOM.html")
 open(out, "w", encoding="utf-8").write(html)
 kb = round(len(html) / 1024)

@@ -10,6 +10,23 @@ const Snd = (() => {
   const AC = (typeof window !== "undefined") && (window.AudioContext || window.webkitAudioContext);
   let ctx = null, master = null, sfxG = null, musicG = null;
   let muted = false, musicOn = false, musicTimer = null, droneNodes = [];
+  let clickBuf = null, whooshBuf = null;
+
+  function loadBuf(url, set) {
+    if (!ctx || !url || typeof window === "undefined" || !window.fetch) return;
+    fetch(url).then((r) => r.arrayBuffer())
+      .then((a) => ctx.decodeAudioData(a)).then(set).catch(() => {});
+  }
+  function loadClick() {
+    if (!clickBuf) loadBuf(window.CLICK_URL, (b) => { clickBuf = b; });
+    if (!whooshBuf) loadBuf(window.WHOOSH_URL, (b) => { whooshBuf = b; });
+  }
+  function playBuf(buf, gain) {
+    if (!ctx || !buf) return;
+    const s = ctx.createBufferSource(); s.buffer = buf;
+    const g = ctx.createGain(); g.gain.value = gain;
+    s.connect(g).connect(sfxG); s.start();
+  }
 
   function ensure() {
     if (!AC) return null;
@@ -18,6 +35,7 @@ const Snd = (() => {
       master = ctx.createGain(); master.gain.value = muted ? 0 : 0.9; master.connect(ctx.destination);
       sfxG = ctx.createGain(); sfxG.gain.value = 1.0; sfxG.connect(master);
       musicG = ctx.createGain(); musicG.gain.value = 0.0; musicG.connect(master);
+      loadClick();
     }
     if (ctx.state === "suspended") ctx.resume();
     return ctx;
@@ -75,10 +93,11 @@ const Snd = (() => {
 
   return {
     resume() { ensure(); },
+    click() { if (!ensure()) return; if (clickBuf) playBuf(clickBuf, 0.5); else noise(now(), 0.05, { gain: 0.1, freq: 2000, type: "highpass" }); },
     isMuted() { return muted; },
     setMuted(m) { muted = m; if (master) master.gain.setTargetAtTime(m ? 0 : 0.9, now(), 0.05); },
     startMusic,
-    spin() { if (!ensure()) return; const t = now(); noise(t, 0.34, { gain: 0.16, freq: 950, type: "lowpass" }); tone(200, t, 0.16, { type: "sawtooth", gain: 0.05, to: 110 }); },
+    spin() { if (!ensure()) return; if (whooshBuf) { playBuf(whooshBuf, 0.25); return; } const t = now(); noise(t, 0.34, { gain: 0.16, freq: 950, type: "lowpass" }); tone(200, t, 0.16, { type: "sawtooth", gain: 0.05, to: 110 }); },
     land() { if (!ensure()) return; const t = now(); tone(150, t, 0.07, { type: "sine", gain: 0.10, to: 80 }); },
     pop() { if (!ensure()) return; const t = now(); noise(t, 0.16, { gain: 0.13, freq: 1700, type: "bandpass", q: 0.8 }); },
     orb() { if (!ensure()) return; const t = now(); tone(880, t, 0.2, { type: "triangle", gain: 0.11, to: 1320 }); tone(1320, t + 0.05, 0.2, { type: "sine", gain: 0.07, to: 1760 }); },
@@ -596,14 +615,17 @@ function updateSpeed() {
   speedBtn.classList.toggle("turbo", SPEEDS[state.speedIndex].name === "TURBO");
 }
 $("betUp").addEventListener("click", () => {
+  Snd.click();
   if (state.busy) return;
   state.betIndex = Math.min(BETS.length - 1, state.betIndex + 1); updateBet();
 });
 $("betDown").addEventListener("click", () => {
+  Snd.click();
   if (state.busy) return;
   state.betIndex = Math.max(0, state.betIndex - 1); updateBet();
 });
 anteBtn.addEventListener("click", () => {
+  Snd.click();
   if (state.busy) return;
   state.ante = !state.ante;
   setAnte(state.ante);
@@ -615,15 +637,16 @@ soundBtn.addEventListener("click", () => {
   const m = !Snd.isMuted();
   Snd.setMuted(m);
   soundBtn.classList.toggle("muted", m);
-  if (!m) { Snd.resume(); kickAudio(); }
+  if (!m) { Snd.resume(); kickAudio(); Snd.click(); }
 });
 speedBtn.addEventListener("click", () => {
+  Snd.click();
   if (state.busy) return;
   state.speedIndex = (state.speedIndex + 1) % SPEEDS.length;
   updateSpeed();
 });
-payBtn.addEventListener("click", () => ptOverlay.classList.add("show"));
-ptClose.addEventListener("click", () => ptOverlay.classList.remove("show"));
+payBtn.addEventListener("click", () => { Snd.click(); ptOverlay.classList.add("show"); });
+ptClose.addEventListener("click", () => { Snd.click(); ptOverlay.classList.remove("show"); });
 ptOverlay.addEventListener("click", (e) => { if (e.target === ptOverlay) ptOverlay.classList.remove("show"); });
 spinBtn.addEventListener("click", spin);
 document.addEventListener("keydown", (e) => { if (e.code === "Space") { e.preventDefault(); spin(); } });

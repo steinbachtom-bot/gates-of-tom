@@ -40,6 +40,7 @@ if os.path.exists(decor):
 # Embarquer les sons (clic, whoosh) en data-URI
 for path, token in [("assets/audio/click.mp3", '"assets/audio/click.mp3"'),
                     ("assets/audio/whoosh_spin.mp3", '"assets/audio/whoosh_spin.mp3"'),
+                    ("assets/audio/hit.mp3", '"assets/audio/hit.mp3"'),
                     ("assets/audio/music.mp3", '"assets/audio/music.mp3"'),
                     ("assets/audio/music_fs.mp3", '"assets/audio/music_fs.mp3"')]:
     full = os.path.join(ROOT, path)

@@ -310,17 +310,21 @@
   .footer-note{font-family:"Barlow",sans-serif; font-size:10px; color:var(--bone-faint);
     max-width:780px; text-align:center; padding:6px 16px 26px; line-height:1.5;}
 
-  /* win banner */
-  .winbanner{position:fixed; top:34%; left:50%; transform:translate(-50%,-50%) scale(.6);
-    text-align:center; pointer-events:none; opacity:0; z-index:30; transition:.25s; padding:22px 40px;
-    border-radius:12px; border:1px solid var(--edge);
-    background:radial-gradient(120% 140% at 50% 0%, rgba(107,31,46,.6), rgba(10,8,7,.4));
-    box-shadow:0 0 60px rgba(0,0,0,.6);}
-  .winbanner.show{opacity:1; transform:translate(-50%,-50%) scale(1);}
-  .winbanner .tag{font-family:"Barlow Semi Condensed",sans-serif; letter-spacing:.34em;
-    text-transform:uppercase; font-size:13px; color:var(--gold-3);}
-  .winbanner .big{font-family:"Cinzel Decorative",serif; font-weight:700; font-size:48px; line-height:1.1;
-    background:var(--gold-foil); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  /* écran Big Win : vidéo en fond + libellé + compteur */
+  .bigwin{position:fixed; inset:0; z-index:38; display:none; align-items:center; justify-content:center;
+    opacity:0; transition:opacity .35s;
+    background:radial-gradient(circle at 50% 45%, rgba(107,31,46,.4), rgba(6,4,4,.92) 70%);}
+  .bigwin.show{display:flex; opacity:1;}
+  .bw-video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:-1;
+    opacity:0; transition:opacity .4s;}
+  .bigwin.show .bw-video{opacity:1;}
+  .bw-content{text-align:center; z-index:1; padding:0 16px;}
+  .bw-tag{font-family:"Cinzel Decorative",serif; font-weight:700; letter-spacing:.1em;
+    font-size:clamp(30px,7vw,66px); line-height:1;
+    background:var(--gold-foil); -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 0 40px rgba(201,162,39,.35); filter:drop-shadow(0 3px 0 var(--oxblood-deep));}
+  .bw-amount{font-family:"Cinzel Decorative",serif; font-weight:700; font-size:clamp(36px,9vw,84px); line-height:1.05;
+    color:var(--gold-hi); text-shadow:0 0 32px rgba(249,237,180,.6); margin-top:8px; font-variant-numeric:tabular-nums;}
 
   /* free spins overlay */
   .fs-overlay{position:fixed; inset:0; background:rgba(6,4,4,.9); z-index:40;
@@ -348,7 +352,7 @@
     .betbox{padding:4px 6px;}
     button{width:34px; height:34px; font-size:18px;}
     .betval{min-width:48px; font-size:14px;}
-    .winbanner .big{font-size:34px;}
+    .bw-amount{font-size:clamp(30px,11vw,56px);}
     .footer-note{font-size:9px;}
   }
   @media (max-width:380px){
@@ -420,9 +424,12 @@
     RTP ≈ 96 %, max win 5000×. Direction artistique « Mad Olympvs ».
   </div>
 
-  <div class="winbanner" id="winBanner">
-    <div class="tag" id="winTag">GRAND</div>
-    <div class="big" id="winBig">x0</div>
+  <div class="bigwin" id="bigWin">
+    <video class="bw-video" id="bwVideo" muted playsinline preload="auto" src="assets/decor/bigwin.mp4"></video>
+    <div class="bw-content">
+      <div class="bw-tag" id="bwTag">BIG WIN</div>
+      <div class="bw-amount" id="bwAmount">0</div>
+    </div>
   </div>
 
   <div class="pt-overlay" id="ptOverlay">

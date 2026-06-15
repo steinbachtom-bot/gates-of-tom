@@ -119,6 +119,16 @@
   /* braises en superposition plein écran */
   .ember-layer{position:fixed; inset:0; z-index:3; pointer-events:none; overflow:hidden;}
 
+  /* secousse d'impact de la grille (synchro avec le son d'atterrissage) */
+  @keyframes gridShake{
+    0%{transform:translate(0,0);}
+    25%{transform:translate(0,2px);}
+    50%{transform:translate(-1px,-1px);}
+    75%{transform:translate(1px,1px);}
+    100%{transform:translate(0,0);}
+  }
+  .grid.shake{animation:gridShake .2s cubic-bezier(.36,.07,.19,.97);}
+
   /* pas de cadre : les symboles flottent en tuiles deplacables (style Gates of Olympus) */
   .tile{position:relative; min-width:0; min-height:0; will-change:transform;
     display:flex; align-items:center; justify-content:center;}
@@ -433,7 +443,7 @@
     <button id="fsStart">DÉCHAÎNER</button>
   </div>
 
-<script>window.CLICK_URL = "assets/audio/click.mp3"; window.WHOOSH_URL = "assets/audio/whoosh_spin.mp3"; window.HIT_URL = "assets/audio/hit.mp3"; window.MUSIC_URL = "assets/audio/music.mp3"; window.FS_MUSIC_URL = "assets/audio/music_fs.mp3";</script>
+<script>window.CLICK_URL = "assets/audio/click.mp3"; window.WHOOSH_URL = "assets/audio/whoosh_spin.mp3"; window.HIT_URL = "assets/audio/hit.mp3"; window.LAND_URL = "assets/audio/land.mp3"; window.MUSIC_URL = "assets/audio/music.mp3"; window.FS_MUSIC_URL = "assets/audio/music_fs.mp3";</script>
 <script src="engine.js"></script>
 <script src="game.js"></script>
 </body>

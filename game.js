@@ -10,7 +10,7 @@ const Snd = (() => {
   const AC = (typeof window !== "undefined") && (window.AudioContext || window.webkitAudioContext);
   let ctx = null, master = null, sfxG = null, musicG = null, fileMusicG = null;
   let sfxMuted = false, musicMuted = false, musicOn = false, musicTimer = null, droneNodes = [];
-  let clickBuf = null, whooshBuf = null, hitBuf = null, musicBuf = null, fsMusicBuf = null;
+  let clickBuf = null, whooshBuf = null, hitBuf = null, landBuf = null, musicBuf = null, fsMusicBuf = null;
   let musicTrack = "base", activeMusic = [];
   const MUSIC_VOL = 0.5, XF = 1.8;   // volume musique, durée du crossfade (s)
 
@@ -23,6 +23,7 @@ const Snd = (() => {
     if (!clickBuf) loadBuf(window.CLICK_URL, (b) => { clickBuf = b; });
     if (!whooshBuf) loadBuf(window.WHOOSH_URL, (b) => { whooshBuf = b; });
     if (!hitBuf) loadBuf(window.HIT_URL, (b) => { hitBuf = b; });
+    if (!landBuf) loadBuf(window.LAND_URL, (b) => { landBuf = b; });
   }
   function trackUrl(track) {
     if (typeof window === "undefined") return null;
@@ -199,7 +200,7 @@ const Snd = (() => {
     baseMusic() { switchTrack("base"); },
     startMusic,
     spin() { if (!ensure()) return; if (whooshBuf) { playBuf(whooshBuf, 0.25); return; } const t = now(); noise(t, 0.34, { gain: 0.16, freq: 950, type: "lowpass" }); tone(200, t, 0.16, { type: "sawtooth", gain: 0.05, to: 110 }); },
-    land() { if (!ensure()) return; const t = now(); tone(150, t, 0.07, { type: "sine", gain: 0.10, to: 80 }); },
+    land() { if (!ensure()) return; if (landBuf) { playBuf(landBuf, 0.3); return; } const t = now(); tone(150, t, 0.07, { type: "sine", gain: 0.10, to: 80 }); },
     pop() { if (!ensure()) return; const t = now(); noise(t, 0.16, { gain: 0.13, freq: 1700, type: "bandpass", q: 0.8 }); },
     orb() { if (!ensure()) return; const t = now(); tone(880, t, 0.2, { type: "triangle", gain: 0.11, to: 1320 }); tone(1320, t + 0.05, 0.2, { type: "sine", gain: 0.07, to: 1760 }); },
     win(mult) { if (!ensure()) return; if (hitBuf) { playBuf(hitBuf, 0.45); return; } const t = now(); const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5]; const n = Math.max(1, Math.min(notes.length, 1 + Math.floor((mult || 0) / 2))); for (let i = 0; i < n; i++) tone(notes[i], t + i * 0.07, 0.2, { type: "triangle", gain: 0.13 }); },
@@ -312,6 +313,13 @@ const buyCost = () => bet() * BUY_COST_MULT;
 let tileAt = new Array(CFG.CELLS).fill(null);
 
 const DROP_EASE = "cubic-bezier(.28,.9,.32,1)";
+const SLAM_EASE = "cubic-bezier(.2,.75,.3,1)"; // chute rapide, sans rebond
+function shakeGrid() {
+  if (!hasLayout()) return;
+  gridEl.classList.remove("shake");
+  void gridEl.offsetWidth;            // force reflow pour relancer l'animation
+  gridEl.classList.add("shake");
+}
 function hasLayout() {
   return typeof gridEl.getBoundingClientRect === "function" &&
          gridEl.getBoundingClientRect().height > 0;
@@ -344,7 +352,7 @@ function dropIn(cells) {
       placeAt(t, c, r);
       gridEl.appendChild(t);
       tileAt[i] = t;
-      if (H) { t.style.transition = "none"; t.style.transform = `translateY(${-(H * 1.15)}px)`; }
+      if (H) { t.style.transition = "none"; t.style.transform = `translateY(${-(H * 1.28)}px)`; }
     }
   }
   if (H) {
@@ -352,8 +360,8 @@ function dropIn(cells) {
     for (let c = 0; c < CFG.REELS; c++) {
       for (let r = 0; r < CFG.ROWS; r++) {
         const t = tileAt[idx(c, r)];
-        const delay = dur(c * 45 + (CFG.ROWS - 1 - r) * 26); // gauche->droite, remplit par le bas
-        t.style.transition = `transform ${dur(420)}ms ${DROP_EASE} ${delay}ms`;
+        const delay = dur(c * 42 + (CFG.ROWS - 1 - r) * 22); // gauche->droite, remplit par le bas
+        t.style.transition = `transform ${dur(380)}ms ${SLAM_EASE} ${delay}ms`;
         t.style.transform = "translateY(0)";
       }
     }
@@ -451,8 +459,15 @@ async function animateRound(round, onPartial) {
   let unitWin = 0;
   Snd.spin();
   dropIn(frames[0].cells);              // descente initiale (toutes les colonnes)
-  await sleep(hasLayout() ? dur(760) : 0);
-  Snd.land();
+  if (hasLayout()) {
+    // le dernier symbole (col. 5, rangée haute) se pose vers delay(298)+chute(380)
+    await sleep(dur(660));
+    Snd.land();                          // impact pile à l'atterrissage du dernier
+    if (!frames[0].winCells.length) shakeGrid(); // secousse seulement s'il n'y a pas de hit
+    await sleep(dur(120));
+  } else {
+    Snd.land();
+  }
   let i = 0;
   while (frames[i] && frames[i].winCells.length) {
     unitWin += frames[i].stepWin;

@@ -8,9 +8,11 @@
    ====================================================================== */
 const Snd = (() => {
   const AC = (typeof window !== "undefined") && (window.AudioContext || window.webkitAudioContext);
-  let ctx = null, master = null, sfxG = null, musicG = null;
-  let muted = false, musicOn = false, musicTimer = null, droneNodes = [];
-  let clickBuf = null, whooshBuf = null;
+  let ctx = null, master = null, sfxG = null, musicG = null, fileMusicG = null;
+  let sfxMuted = false, musicMuted = false, musicOn = false, musicTimer = null, droneNodes = [];
+  let clickBuf = null, whooshBuf = null, musicBuf = null, fsMusicBuf = null;
+  let musicTrack = "base", activeMusic = [];
+  const MUSIC_VOL = 0.5, XF = 1.8;   // volume musique, durée du crossfade (s)
 
   function loadBuf(url, set) {
     if (!ctx || !url || typeof window === "undefined" || !window.fetch) return;
@@ -20,6 +22,56 @@ const Snd = (() => {
   function loadClick() {
     if (!clickBuf) loadBuf(window.CLICK_URL, (b) => { clickBuf = b; });
     if (!whooshBuf) loadBuf(window.WHOOSH_URL, (b) => { whooshBuf = b; });
+  }
+  function trackUrl(track) {
+    if (typeof window === "undefined") return null;
+    return track === "fs" ? window.FS_MUSIC_URL : window.MUSIC_URL;
+  }
+  function trackBuf(track) { return track === "fs" ? fsMusicBuf : musicBuf; }
+  function loadTrack(track) {
+    const url = trackUrl(track);
+    if (!ctx || trackBuf(track) || !url || !window.fetch) return Promise.reject();
+    return fetch(url).then((r) => { if (!r.ok) throw new Error("no music"); return r.arrayBuffer(); })
+      .then((a) => ctx.decodeAudioData(a))
+      .then((b) => { if (track === "fs") fsMusicBuf = b; else musicBuf = b; });
+  }
+  // Lecture en boucle avec crossfade : chaque passage a sa propre enveloppe
+  // (fondu d'entrée / sortie), l'instance suivante chevauche la fin.
+  function playLoop() {
+    if (!ctx || !fileMusicG || !musicOn) return;
+    const track = musicTrack;
+    const buf = trackBuf(track);
+    if (!buf) { loadTrack(track).then(() => { if (musicOn) playLoop(); }).catch(() => {}); return; }
+    const d = buf.duration;
+    const s = ctx.createBufferSource(); s.buffer = buf;
+    const g = ctx.createGain();
+    s.connect(g).connect(fileMusicG);
+    const t0 = now() + 0.03;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(1, t0 + XF);
+    g.gain.setValueAtTime(1, t0 + Math.max(XF, d - XF));
+    g.gain.linearRampToValueAtTime(0.0001, t0 + d);
+    s.start(t0); s.stop(t0 + d + 0.1);
+    const entry = { s, g, track };
+    activeMusic.push(entry);
+    s.onended = () => { const i = activeMusic.indexOf(entry); if (i >= 0) activeMusic.splice(i, 1); };
+    musicTimer = setTimeout(() => { if (musicOn && musicTrack === track) playLoop(); }, Math.max(1000, (d - XF) * 1000));
+  }
+  function switchTrack(track) {
+    if (!ctx || !musicOn || musicTrack === track) return;
+    musicTrack = track;
+    if (musicTimer) clearTimeout(musicTimer);
+    const t = now();
+    activeMusic.forEach(({ s, g }) => {
+      try {
+        g.gain.cancelScheduledValues(t);
+        g.gain.setValueAtTime(Math.max(0.0001, g.gain.value), t);
+        g.gain.linearRampToValueAtTime(0.0001, t + 1.0);
+        s.stop(t + 1.15);
+      } catch (e) { /* ignore */ }
+    });
+    activeMusic = [];
+    playLoop();
   }
   function playBuf(buf, gain) {
     if (!ctx || !buf) return;
@@ -32,9 +84,10 @@ const Snd = (() => {
     if (!AC) return null;
     if (!ctx) {
       ctx = new AC();
-      master = ctx.createGain(); master.gain.value = muted ? 0 : 0.9; master.connect(ctx.destination);
-      sfxG = ctx.createGain(); sfxG.gain.value = 1.0; sfxG.connect(master);
+      master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
+      sfxG = ctx.createGain(); sfxG.gain.value = sfxMuted ? 0 : 1.0; sfxG.connect(master);
       musicG = ctx.createGain(); musicG.gain.value = 0.0; musicG.connect(master);
+      fileMusicG = ctx.createGain(); fileMusicG.gain.value = 0.0; fileMusicG.connect(master);
       loadClick();
     }
     if (ctx.state === "suspended") ctx.resume();
@@ -71,31 +124,78 @@ const Snd = (() => {
     src.start(t0); src.stop(t0 + dur + 0.02);
   }
 
+  // Progression sombre et ancienne (Ré phrygien) : Dm – Mi♭ – Dm – Do
+  const CHORDS = [
+    { pad: [146.83, 174.61, 220.00], bass: 73.42 },  // Dm
+    { pad: [155.56, 196.00, 233.08], bass: 77.78 },  // Eb (bII phrygien)
+    { pad: [146.83, 174.61, 220.00], bass: 73.42 },  // Dm
+    { pad: [130.81, 164.81, 196.00], bass: 65.41 },  // C (bVII)
+  ];
+  // Mélodie modale (Ré phrygien : D Eb F G A Bb C) — flûte ancienne clairsemée
+  const MEL = [174.61, 196.00, 220.00, 233.08, 261.63, 293.66, 311.13];
+  let barIdx = 0;
+
+  function mPad(freq, t0, dur, gain) {
+    const o = ctx.createOscillator(); o.type = "triangle"; o.frequency.value = freq;
+    const o2 = ctx.createOscillator(); o2.type = "sawtooth"; o2.frequency.value = freq * 1.004;
+    const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.Q.value = 0.7;
+    lp.frequency.setValueAtTime(280, t0); lp.frequency.linearRampToValueAtTime(620, t0 + dur * 0.5);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain, t0 + 0.9);
+    g.gain.setValueAtTime(gain, t0 + dur * 0.6);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(lp); o2.connect(lp); lp.connect(g).connect(musicG);
+    const sg = ctx.createGain(); sg.gain.value = 0.4; o2.disconnect(); o2.connect(sg).connect(lp);
+    o.start(t0); o2.start(t0); o.stop(t0 + dur + 0.05); o2.stop(t0 + dur + 0.05);
+  }
+  function mBass(freq, t0, dur) {
+    const o = ctx.createOscillator(); o.type = "triangle"; o.frequency.value = freq;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.15, t0 + 0.1);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g).connect(musicG); o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  function mDrum(t0, gain) {            // tambour de guerre profond
+    const o = ctx.createOscillator(); o.type = "sine";
+    o.frequency.setValueAtTime(110, t0); o.frequency.exponentialRampToValueAtTime(34, t0 + 0.22);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.34);
+    o.connect(g).connect(musicG); o.start(t0); o.stop(t0 + 0.38);
+  }
+  function mMel(freq, t0, dur) {        // flûte ancienne (muffled)
+    const o = ctx.createOscillator(); o.type = "sine"; o.frequency.value = freq;
+    const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1300;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.05, t0 + 0.18);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(lp).connect(g).connect(musicG); o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+
+  // Musique = vraie piste audio (fichier). Pas de musique synthé (trop "arcade").
   function startMusic() {
     if (!ensure() || musicOn) return;
     musicOn = true;
-    musicG.gain.setTargetAtTime(0.18, now(), 1.5);
-    [110, 164.81].forEach((f, i) => {                 // drone grave (La + Mi)
-      const o = ctx.createOscillator(); o.type = "sawtooth"; o.frequency.value = f * (i ? 1.004 : 1);
-      const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 380;
-      const g = ctx.createGain(); g.gain.value = 0.05;
-      o.connect(lp).connect(g).connect(musicG); o.start(); droneNodes.push(o, g);
-    });
-    schedule();
-  }
-  function schedule() {
-    if (!musicOn || !ctx) return;
-    const scale = [440, 523.25, 587.33, 659.25, 783.99, 880];
-    const f = scale[Math.floor(Math.random() * scale.length)];
-    tone(f, now() + 0.02, 1.8, { type: "sine", gain: 0.045, dest: musicG, release: 0.6 });
-    musicTimer = setTimeout(schedule, 2600 + Math.random() * 2800);
+    musicTrack = "base";
+    fileMusicG.gain.value = musicMuted ? 0 : MUSIC_VOL;
+    playLoop();
+    loadTrack("fs").catch(() => {});   // pré-chargement de la piste free spins
   }
 
   return {
     resume() { ensure(); },
     click() { if (!ensure()) return; if (clickBuf) playBuf(clickBuf, 0.5); else noise(now(), 0.05, { gain: 0.1, freq: 2000, type: "highpass" }); },
-    isMuted() { return muted; },
-    setMuted(m) { muted = m; if (master) master.gain.setTargetAtTime(m ? 0 : 0.9, now(), 0.05); },
+    isSfxOn() { return !sfxMuted; },
+    isMusicOn() { return !musicMuted; },
+    setSfx(on) { sfxMuted = !on; if (sfxG) sfxG.gain.setTargetAtTime(on ? 1 : 0, now(), 0.05); },
+    setMusic(on) { musicMuted = !on; if (fileMusicG) fileMusicG.gain.setTargetAtTime(on ? MUSIC_VOL : 0, now(), 0.2); },
+    setAll(on) { this.setSfx(on); this.setMusic(on); },
+    fsMusic() { switchTrack("fs"); },
+    baseMusic() { switchTrack("base"); },
     startMusic,
     spin() { if (!ensure()) return; if (whooshBuf) { playBuf(whooshBuf, 0.25); return; } const t = now(); noise(t, 0.34, { gain: 0.16, freq: 950, type: "lowpass" }); tone(200, t, 0.16, { type: "sawtooth", gain: 0.05, to: 110 }); },
     land() { if (!ensure()) return; const t = now(); tone(150, t, 0.07, { type: "sine", gain: 0.10, to: 80 }); },
@@ -185,6 +285,10 @@ const speedBtn = $("speedBtn");
 const speedLbl = $("speedLbl");
 const anteCostEl = $("anteCost");
 const soundBtn = $("soundBtn");
+const sndMenu = $("sndMenu");
+const sfxToggle = $("sfxToggle");
+const musToggle = $("musToggle");
+const allToggle = $("allToggle");
 
 /* Noms d'affichage (selon l'art applique) */
 const SYM_NAME = {
@@ -394,6 +498,7 @@ async function runFreeSpins(bought = false) {
     btn.addEventListener("click", handler);
   });
   fsOverlay.classList.remove("show");
+  Snd.fsMusic();                       // bascule sur la musique de free spins
 
   fsHud.classList.add("show");
   let persist = 0, fsWin = 0, spins = CFG.FS_AWARD;
@@ -426,6 +531,7 @@ async function runFreeSpins(bought = false) {
   }
 
   fsHud.classList.remove("show");
+  Snd.baseMusic();                      // retour à la musique de base
   return fsWin;
 }
 
@@ -633,12 +739,35 @@ anteBtn.addEventListener("click", () => {
   updateBet();
 });
 buyBtn.addEventListener("click", buyBonus);
-soundBtn.addEventListener("click", () => {
-  const m = !Snd.isMuted();
-  Snd.setMuted(m);
-  soundBtn.classList.toggle("muted", m);
-  if (!m) { Snd.resume(); kickAudio(); Snd.click(); }
+function updateSndMenu() {
+  const sfx = Snd.isSfxOn(), mus = Snd.isMusicOn();
+  sfxToggle.classList.toggle("on", sfx);
+  musToggle.classList.toggle("on", mus);
+  allToggle.classList.toggle("on", sfx || mus);
+  soundBtn.classList.toggle("muted", !sfx && !mus);
+}
+soundBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  kickAudio();
+  Snd.click();
+  sndMenu.classList.toggle("show");
 });
+allToggle.addEventListener("click", (e) => {
+  e.stopPropagation();
+  kickAudio();
+  const target = !(Snd.isSfxOn() || Snd.isMusicOn()); // si tout coupé -> tout activer
+  Snd.setAll(target); if (target) Snd.click(); updateSndMenu();
+});
+sfxToggle.addEventListener("click", (e) => {
+  e.stopPropagation();
+  Snd.setSfx(!Snd.isSfxOn()); Snd.click(); updateSndMenu();
+});
+musToggle.addEventListener("click", (e) => {
+  e.stopPropagation();
+  kickAudio();
+  Snd.setMusic(!Snd.isMusicOn()); Snd.click(); updateSndMenu();
+});
+document.addEventListener("click", () => { sndMenu.classList.remove("show"); });
 speedBtn.addEventListener("click", () => {
   Snd.click();
   if (state.busy) return;
@@ -657,7 +786,7 @@ function kickAudio() {
   if (audioStarted) return;
   audioStarted = true;
   Snd.resume();
-  if (!Snd.isMuted()) Snd.startMusic();
+  Snd.startMusic();
 }
 document.addEventListener("pointerdown", kickAudio, { once: true });
 
@@ -687,4 +816,5 @@ dropIn(Array.from({ length: CFG.CELLS }, newCell));
 buildPaytable();
 updateBet();
 updateSpeed();
+updateSndMenu();
 balanceEl.textContent = fmt(state.balance);

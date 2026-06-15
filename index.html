@@ -220,6 +220,27 @@
 
   .sndbtn{min-width:42px; font-size:16px; line-height:1;}
   .sndbtn.muted{color:var(--bone-faint); border-color:var(--edge-soft); opacity:.65; text-decoration:line-through;}
+  .snd-wrap{position:relative; display:inline-flex;}
+  .snd-menu{position:absolute; bottom:calc(100% + 10px); left:50%; transform:translateX(-50%);
+    display:none; flex-direction:column; gap:6px; padding:8px; min-width:158px; z-index:25;
+    background:linear-gradient(180deg,#1a140d,#0c070a); border:1px solid var(--edge); border-radius:10px;
+    box-shadow:0 14px 34px rgba(0,0,0,.65);}
+  .snd-menu.show{display:flex;}
+  .snd-menu::after{content:""; position:absolute; top:100%; left:50%; transform:translateX(-50%);
+    border:7px solid transparent; border-top-color:var(--edge);}
+  .snd-row{width:100%; height:auto; display:flex; align-items:center; justify-content:space-between; gap:14px;
+    padding:9px 11px; border-radius:7px; background:var(--ash); border:1px solid var(--edge-soft);
+    font-family:"Barlow Semi Condensed",sans-serif; text-transform:uppercase; letter-spacing:.12em;
+    font-size:11px; color:var(--bone-dim);}
+  .snd-row:hover{border-color:var(--gold); color:var(--gold-3);}
+  .snd-row .sw{width:32px; height:17px; border-radius:9px; background:#2a1116; position:relative; transition:.15s; flex:0 0 32px;}
+  .snd-row .sw::after{content:""; position:absolute; top:2px; left:2px; width:13px; height:13px; border-radius:50%;
+    background:var(--bone-faint); transition:.15s;}
+  .snd-row.on .sw{background:var(--ichor); box-shadow:0 0 8px rgba(127,227,210,.5);}
+  .snd-row.on .sw::after{left:17px; background:#0c070a;}
+  .snd-master{color:var(--gold-3); border-color:var(--edge); font-weight:600;}
+  .snd-master.on .sw{background:var(--gold);}
+  .snd-sep{height:1px; background:var(--edge-soft); margin:1px 2px;}
   .speedbtn{display:flex; align-items:center; gap:7px;}
   .spd-ico{font-size:15px; line-height:1; color:var(--gold);}
   .speedbtn.turbo{border-color:var(--gold); color:var(--gold-hi); box-shadow:0 0 12px rgba(201,162,39,.3);}
@@ -357,7 +378,15 @@
 
   <div class="controls">
     <button class="info" id="payBtn" title="Liste des gains">GAINS</button>
-    <button class="info sndbtn" id="soundBtn" title="Son">♪</button>
+    <div class="snd-wrap">
+      <button class="info sndbtn" id="soundBtn" title="Son">♪</button>
+      <div class="snd-menu" id="sndMenu">
+        <button class="snd-row snd-master on" id="allToggle"><span>Tous les sons</span><span class="sw"></span></button>
+        <div class="snd-sep"></div>
+        <button class="snd-row on" id="sfxToggle"><span>Effets</span><span class="sw"></span></button>
+        <button class="snd-row on" id="musToggle"><span>Musique</span><span class="sw"></span></button>
+      </div>
+    </div>
     <button class="info speedbtn" id="speedBtn" title="Vitesse des tours">
       <span class="spd-ico">»</span><span id="speedLbl">NORMAL</span>
     </button>
@@ -404,7 +433,7 @@
     <button id="fsStart">DÉCHAÎNER</button>
   </div>
 
-<script>window.CLICK_URL = "assets/audio/click.mp3"; window.WHOOSH_URL = "assets/audio/whoosh_spin.mp3";</script>
+<script>window.CLICK_URL = "assets/audio/click.mp3"; window.WHOOSH_URL = "assets/audio/whoosh_spin.mp3"; window.MUSIC_URL = "assets/audio/music.mp3"; window.FS_MUSIC_URL = "assets/audio/music_fs.mp3";</script>
 <script src="engine.js"></script>
 <script src="game.js"></script>
 </body>

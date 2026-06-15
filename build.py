@@ -29,6 +29,14 @@ html = html.replace('<script src="engine.js"></script>',
 html = html.replace('<script src="game.js"></script>',
                     assets_script + "\n<script>\n" + game + "\n</script>")
 
+# Embarquer le décor (image de fond) en data-URI
+decor = os.path.join(ROOT, "assets/decor/bg_hades_web.jpg")
+if os.path.exists(decor):
+    with open(decor, "rb") as f:
+        b = base64.b64encode(f.read()).decode("ascii")
+    html = html.replace('src="assets/decor/bg_hades_web.jpg"',
+                        'src="data:image/jpeg;base64,' + b + '"')
+
 out = os.path.join(ROOT, "GATES_OF_TOM.html")
 open(out, "w", encoding="utf-8").write(html)
 kb = round(len(html) / 1024)

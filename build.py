@@ -51,7 +51,8 @@ for path, token in [("assets/audio/click.mp3", '"assets/audio/click.mp3"'),
                     ("assets/audio/hit.mp3", '"assets/audio/hit.mp3"'),
                     ("assets/audio/land.mp3", '"assets/audio/land.mp3"'),
                     ("assets/audio/music.mp3", '"assets/audio/music.mp3"'),
-                    ("assets/audio/music_fs.mp3", '"assets/audio/music_fs.mp3"')]:
+                    ("assets/audio/music_fs.mp3", '"assets/audio/music_fs.mp3"'),
+                    ("assets/audio/bigwin_music.mp3", '"assets/audio/bigwin_music.mp3"')]:
     full = os.path.join(ROOT, path)
     if os.path.exists(full):
         with open(full, "rb") as f:

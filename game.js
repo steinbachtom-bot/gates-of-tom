@@ -10,7 +10,7 @@ const Snd = (() => {
   const AC = (typeof window !== "undefined") && (window.AudioContext || window.webkitAudioContext);
   let ctx = null, master = null, sfxG = null, musicG = null, fileMusicG = null;
   let sfxMuted = false, musicMuted = false, musicOn = false, musicTimer = null, droneNodes = [];
-  let clickBuf = null, whooshBuf = null, hitBuf = null, landBuf = null, musicBuf = null, fsMusicBuf = null;
+  let clickBuf = null, whooshBuf = null, hitBuf = null, landBuf = null, musicBuf = null, fsMusicBuf = null, bigMusicBuf = null;
   let musicTrack = "base", activeMusic = [];
   const MUSIC_VOL = 0.5, XF = 1.8;   // volume musique, durée du crossfade (s)
 
@@ -27,15 +27,19 @@ const Snd = (() => {
   }
   function trackUrl(track) {
     if (typeof window === "undefined") return null;
-    return track === "fs" ? window.FS_MUSIC_URL : window.MUSIC_URL;
+    if (track === "fs") return window.FS_MUSIC_URL;
+    if (track === "bigwin") return window.BIGWIN_MUSIC_URL;
+    return window.MUSIC_URL;
   }
-  function trackBuf(track) { return track === "fs" ? fsMusicBuf : musicBuf; }
+  function trackBuf(track) {
+    return track === "fs" ? fsMusicBuf : (track === "bigwin" ? bigMusicBuf : musicBuf);
+  }
   function loadTrack(track) {
     const url = trackUrl(track);
     if (!ctx || trackBuf(track) || !url || !window.fetch) return Promise.reject();
     return fetch(url).then((r) => { if (!r.ok) throw new Error("no music"); return r.arrayBuffer(); })
       .then((a) => ctx.decodeAudioData(a))
-      .then((b) => { if (track === "fs") fsMusicBuf = b; else musicBuf = b; });
+      .then((b) => { if (track === "fs") fsMusicBuf = b; else if (track === "bigwin") bigMusicBuf = b; else musicBuf = b; });
   }
   // Lecture en boucle avec crossfade : chaque passage a sa propre enveloppe
   // (fondu d'entrée / sortie), l'instance suivante chevauche la fin.
@@ -185,7 +189,8 @@ const Snd = (() => {
     musicTrack = "base";
     fileMusicG.gain.value = musicMuted ? 0 : MUSIC_VOL;
     playLoop();
-    loadTrack("fs").catch(() => {});   // pré-chargement de la piste free spins
+    loadTrack("fs").catch(() => {});       // pré-chargement free spins
+    loadTrack("bigwin").catch(() => {});   // pré-chargement big win
   }
 
   return {
@@ -198,6 +203,8 @@ const Snd = (() => {
     setAll(on) { this.setSfx(on); this.setMusic(on); },
     fsMusic() { switchTrack("fs"); },
     baseMusic() { switchTrack("base"); },
+    setTrack(name) { switchTrack(name); },
+    trackName() { return musicTrack; },
     startMusic,
     spin() { if (!ensure()) return; if (whooshBuf) { playBuf(whooshBuf, 0.25); return; } const t = now(); noise(t, 0.34, { gain: 0.16, freq: 950, type: "lowpass" }); tone(200, t, 0.16, { type: "sawtooth", gain: 0.05, to: 110 }); },
     land() { if (!ensure()) return; if (landBuf) { playBuf(landBuf, 0.3); return; } const t = now(); tone(150, t, 0.07, { type: "sine", gain: 0.10, to: 80 }); },
@@ -505,6 +512,8 @@ async function showBanner(unitWin) {
   // headless / pas de DOM animable : on ne joue pas l'écran
   if (typeof requestAnimationFrame !== "function" || !hasLayout()) return;
 
+  const prevTrack = Snd.trackName();
+  Snd.setTrack("bigwin");                 // musique dédiée au Big Win
   bwAmount.textContent = fmt(0);
   winBanner.classList.add("show");
   try { bwVideo.currentTime = 0; const p = bwVideo.play(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* ignore */ }
@@ -543,6 +552,7 @@ async function showBanner(unitWin) {
   winBanner.removeEventListener("click", onSkip);
   winBanner.classList.remove("show");
   try { bwVideo.pause(); } catch (e) { /* ignore */ }
+  Snd.setTrack(prevTrack);                // retour à la musique précédente
   await sleep(300);
 }
 

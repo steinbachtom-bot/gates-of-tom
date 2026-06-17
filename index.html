@@ -106,12 +106,12 @@
 
   /* Scène : l'image-décor + la grille posée dans le portail central */
   .stage{position:relative; width:100%; max-width:1040px; margin:8px auto 0;
-    aspect-ratio:7552 / 4256; overflow:hidden; border-radius:14px;
+    aspect-ratio:7552 / 4256; overflow:hidden; border-radius:14px; container-type:size;
     border:1px solid var(--edge); box-shadow:0 18px 50px rgba(0,0,0,.55);}
   .bg-art{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block;}
   /* coordonnées du cadre (ajustables) */
   .grid-wrap{position:absolute; z-index:4;
-    left:var(--fl,33.9%); top:var(--ft,31.6%); width:var(--fw,32.8%); height:var(--fh,53.1%);
+    left:var(--fl,35.1%); top:var(--ft,33.5%); width:var(--fw,30.5%); height:var(--fh,49.4%);
     display:flex; align-items:center; justify-content:center;}
   .grid{width:100%; aspect-ratio:6/5; position:relative; overflow:hidden;
     display:grid; grid-template-columns:repeat(6,1fr); grid-template-rows:repeat(5,1fr); gap:2.2%;}
@@ -326,6 +326,37 @@
   .bw-amount{font-family:"Cinzel Decorative",serif; font-weight:700; font-size:9.5cqw; line-height:1.05;
     color:var(--gold-hi); text-shadow:0 0 32px rgba(249,237,180,.6); margin-top:1.5%; font-variant-numeric:tabular-nums;}
 
+  /* panneau éphémère dans la zone de jeu (retrigger / fin free spins) */
+  .toast{position:absolute; inset:0; z-index:7; display:none; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; pointer-events:none; padding:0 6%;
+    background:radial-gradient(circle at 50% 50%, rgba(6,4,4,.78), transparent 68%);}
+  .toast.show{display:flex; animation:toastPop .32s cubic-bezier(.34,1.4,.5,1);}
+  @keyframes toastPop{0%{transform:scale(.7); opacity:0;}100%{transform:scale(1); opacity:1;}}
+  .toast-tag{font-family:"Barlow Semi Condensed",sans-serif; text-transform:uppercase; letter-spacing:.22em;
+    font-size:3.6cqw; color:var(--ichor); margin-bottom:1%;}
+  .toast-big{font-family:"Cinzel Decorative",serif; font-weight:700; font-size:7.5cqw; line-height:1.05;
+    background:var(--gold-foil); -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 0 30px rgba(201,162,39,.4);}
+
+  /* fenêtre de confirmation (achat bonus) */
+  .confirm-overlay{position:fixed; inset:0; z-index:56; display:none; padding:24px;
+    align-items:center; justify-content:center; background:rgba(6,4,4,.85);}
+  .confirm-overlay.show{display:flex;}
+  .confirm-panel{width:100%; max-width:420px; text-align:center; padding:26px 24px 22px;
+    background:radial-gradient(120% 100% at 50% 0%, #1a140d, #0a0807 78%);
+    border:1px solid var(--edge); border-radius:14px; box-shadow:0 30px 70px rgba(0,0,0,.6);}
+  .confirm-title{font-family:"Cinzel Decorative",serif; font-weight:700; font-size:22px;
+    background:var(--gold-foil); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .confirm-text{font-family:"Barlow",sans-serif; font-size:14px; color:var(--bone-dim); line-height:1.6; margin:14px 0 20px;}
+  .confirm-text b{color:var(--gold-3); font-variant-numeric:tabular-nums;}
+  .confirm-actions{display:flex; gap:12px; justify-content:center;}
+  .confirm-no,.confirm-yes{height:auto; width:auto; padding:11px 24px; border-radius:8px;
+    font-family:"Barlow Semi Condensed",sans-serif; text-transform:uppercase; letter-spacing:.16em; font-size:13px; font-weight:600;}
+  .confirm-no{color:var(--bone-dim); background:var(--ash); border:1px solid var(--edge-soft);}
+  .confirm-no:hover{color:var(--bone); border-color:var(--bone-faint);}
+  .confirm-yes{color:#180a0d; background:var(--gold-foil); border:1px solid var(--gold-hi);}
+  .confirm-yes:hover{filter:brightness(1.07); color:#180a0d;}
+
   /* free spins overlay */
   .fs-overlay{position:fixed; inset:0; background:rgba(6,4,4,.9); z-index:40;
     display:none; flex-direction:column; align-items:center; justify-content:center; gap:18px; text-align:center;}
@@ -395,6 +426,10 @@
         <div class="bw-amount" id="bwAmount">0</div>
       </div>
     </div>
+    <div class="toast" id="toast">
+      <div class="toast-tag" id="toastTag"></div>
+      <div class="toast-big" id="toastBig"></div>
+    </div>
   </div>
 
   <div class="controls">
@@ -422,7 +457,7 @@
     </div>
     <button class="spin" id="spinBtn">SPIN</button>
     <button class="buy" id="buyBtn" title="Acheter les free spins">
-      BUY<span class="buy-cost" id="buyCost">2 000</span>
+      BUY BONUS<span class="buy-cost" id="buyCost">2 000</span>
     </button>
   </div>
 
@@ -448,6 +483,17 @@
     <h2 id="fsTitle">LE DIEU FOU S'ÉVEILLE</h2>
     <p id="fsSub">15 FREE SPINS</p>
     <button id="fsStart">DÉCHAÎNER</button>
+  </div>
+
+  <div class="confirm-overlay" id="buyConfirm">
+    <div class="confirm-panel">
+      <div class="confirm-title">Acheter les Free Spins ?</div>
+      <p class="confirm-text">Êtes-vous sûr de vouloir acheter les free spins pour <b id="buyConfirmCost">0</b> jetons ?</p>
+      <div class="confirm-actions">
+        <button class="confirm-no" id="buyCancel">Annuler</button>
+        <button class="confirm-yes" id="buyConfirmBtn">Confirmer</button>
+      </div>
+    </div>
   </div>
 
 <script>window.CLICK_URL = "assets/audio/click.mp3"; window.WHOOSH_URL = "assets/audio/whoosh_spin.mp3"; window.HIT_URL = "assets/audio/hit.mp3"; window.LAND_URL = "assets/audio/land.mp3"; window.MUSIC_URL = "assets/audio/music.mp3"; window.FS_MUSIC_URL = "assets/audio/music_fs.mp3"; window.BIGWIN_MUSIC_URL = "assets/audio/bigwin_music.mp3";</script>

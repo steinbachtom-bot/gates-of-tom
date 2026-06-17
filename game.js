@@ -503,6 +503,20 @@ function bigWinTier(u) {
 const bwVideo = $("bwVideo");
 const bwTag = $("bwTag");
 const bwAmount = $("bwAmount");
+const toastEl = $("toast");
+const toastTag = $("toastTag");
+const toastBig = $("toastBig");
+
+/* Panneau éphémère centré dans la zone de jeu (retrigger, fin des free spins…) */
+async function showStageToast(tag, big, ms) {
+  if (!hasLayout()) return;
+  toastTag.textContent = tag || "";
+  toastBig.textContent = big || "";
+  toastEl.classList.add("show");
+  await sleep(ms);
+  toastEl.classList.remove("show");
+  await sleep(280);
+}
 
 async function showBanner(unitWin) {
   const chips = round2(unitWin * bet());
@@ -593,16 +607,19 @@ async function runFreeSpins(bought = false) {
     else if (CFG.SCATTER_PAYS[sc]) w += CFG.SCATTER_PAYS[sc];
     fsWin += w;
     if (fsWin > CFG.MAX_WIN) { fsWin = CFG.MAX_WIN; }
-    if (sc >= 3) spins += CFG.FS_RETRIG;
+    const retrig = sc >= 3;
+    if (retrig) spins += CFG.FS_RETRIG;
     setHud();
     if (w > 0) {
       winValEl.textContent = fmt(fsWin * bet());
       await sleep(350);
     }
+    if (retrig) await showStageToast("RETRIGGER", "+" + CFG.FS_RETRIG + " FREE SPINS", 1400);
     if (fsWin >= CFG.MAX_WIN) break;
   }
 
   fsHud.classList.remove("show");
+  await showStageToast("TOURS GRATUITS TERMINÉS", fmt(fsWin * bet()) + " jetons", 2400);
   Snd.baseMusic();                      // retour à la musique de base
   return fsWin;
 }
@@ -810,7 +827,19 @@ anteBtn.addEventListener("click", () => {
   anteBtn.classList.toggle("on", state.ante);
   updateBet();
 });
-buyBtn.addEventListener("click", buyBonus);
+const buyConfirm = $("buyConfirm");
+const buyConfirmBtn = $("buyConfirmBtn");
+const buyCancel = $("buyCancel");
+const buyConfirmCost = $("buyConfirmCost");
+buyBtn.addEventListener("click", () => {
+  if (state.busy) return;
+  Snd.click();
+  buyConfirmCost.textContent = fmt(buyCost());
+  buyConfirm.classList.add("show");
+});
+buyCancel.addEventListener("click", () => { Snd.click(); buyConfirm.classList.remove("show"); });
+buyConfirmBtn.addEventListener("click", () => { Snd.click(); buyConfirm.classList.remove("show"); buyBonus(); });
+buyConfirm.addEventListener("click", (e) => { if (e.target === buyConfirm) buyConfirm.classList.remove("show"); });
 function updateSndMenu() {
   const sfx = Snd.isSfxOn(), mus = Snd.isMusicOn();
   sfxToggle.classList.toggle("on", sfx);
@@ -842,8 +871,7 @@ musToggle.addEventListener("click", (e) => {
 document.addEventListener("click", () => { sndMenu.classList.remove("show"); });
 speedBtn.addEventListener("click", () => {
   Snd.click();
-  if (state.busy) return;
-  state.speedIndex = (state.speedIndex + 1) % SPEEDS.length;
+  state.speedIndex = (state.speedIndex + 1) % SPEEDS.length;  // modifiable même en free spins
   updateSpeed();
 });
 payBtn.addEventListener("click", () => { Snd.click(); ptOverlay.classList.add("show"); });

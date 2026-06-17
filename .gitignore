@@ -13,6 +13,7 @@ __pycache__/
 # Etat local du composant image-slot (design)
 .image-slots.state.json
 
-# Décor : on versionne seulement la version web optimisée, pas l'original 8K
+# Décor : on versionne seulement la version web optimisée, pas les sources lourdes
 assets/decor/bg_hades.png
+assets/decor/Gate of Tom Background Updated.png
 assets/decor/_DEPOSER_L_IMAGE_ICI.txt

@@ -1167,6 +1167,7 @@ balanceEl.textContent = fmt(state.balance);
     if (finished) return;
     finished = true;
     setProgress(total);
+    if (typeof window !== "undefined" && typeof window.__hideLoader === "function") { window.__hideLoader(); return; }
     loader.classList.add("hide");
     setTimeout(() => loader.remove(), 600);
   };

@@ -520,6 +520,24 @@
       <div class="loader-pct" id="loaderPct">0%</div>
     </div>
   </div>
+  <script>
+    /* Garde-fou INDÉPENDANT de game.js : le loader ne doit jamais rester bloqué,
+       même si engine.js / game.js échoue à charger ou lève une erreur. */
+    (function () {
+      var hidden = false;
+      function hideLoader() {
+        if (hidden) return; hidden = true;
+        var l = document.getElementById("loader");
+        if (!l) return;
+        l.classList.add("hide");
+        setTimeout(function () { if (l && l.parentNode) l.parentNode.removeChild(l); }, 700);
+      }
+      window.__hideLoader = hideLoader;                 // game.js peut l'appeler quand le préchargement est fini
+      window.addEventListener("load", function () { setTimeout(hideLoader, 1500); });
+      setTimeout(hideLoader, 7000);                     // filet absolu
+      window.addEventListener("error", function () { setTimeout(hideLoader, 1500); }, true);
+    })();
+  </script>
   <div class="ember-layer" id="emberLayer"></div>
   <div class="fx-grain"></div>
   <div class="fx-vig"></div>

@@ -212,6 +212,7 @@ const Snd = (() => {
     orb() { if (!ensure()) return; const t = now(); tone(880, t, 0.2, { type: "triangle", gain: 0.11, to: 1320 }); tone(1320, t + 0.05, 0.2, { type: "sine", gain: 0.07, to: 1760 }); },
     win(mult) { if (!ensure()) return; if (hitBuf) { playBuf(hitBuf, 0.45); return; } const t = now(); const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5]; const n = Math.max(1, Math.min(notes.length, 1 + Math.floor((mult || 0) / 2))); for (let i = 0; i < n; i++) tone(notes[i], t + i * 0.07, 0.2, { type: "triangle", gain: 0.13 }); },
     scatter() { if (!ensure()) return; const t = now(); tone(660, t, 0.5, { type: "sine", gain: 0.15, to: 990 }); noise(t, 0.5, { gain: 0.05, freq: 700, type: "bandpass", q: 2 }); },
+    anticip() { if (!ensure()) return; const t = now(); tone(220, t, 1.1, { type: "sawtooth", gain: 0.12, to: 660 }); tone(110, t, 1.1, { type: "sine", gain: 0.10, to: 220 }); noise(t, 1.1, { gain: 0.04, freq: 900, type: "bandpass", q: 3 }); },
     fsTrigger() { if (!ensure()) return; const t = now(); [392, 523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, t + i * 0.13, 0.55, { type: "sawtooth", gain: 0.12 })); tone(98, t, 1.3, { type: "sine", gain: 0.16, to: 196 }); },
     bigWin() { if (!ensure()) return; const t = now(); [523.25, 659.25, 783.99, 1046.5, 1318.5, 1568].forEach((f, i) => tone(f, t + i * 0.09, 0.42, { type: "triangle", gain: 0.15 })); },
   };
@@ -261,6 +262,8 @@ const state = {
   busy: false,
   ante: false,
   speedIndex: 0, // NORMAL par défaut
+  auto: 0,       // tours auto restants (-1 = illimité, 0 = arrêté)
+  autoActive: false,
 };
 const BUY_COST_MULT = 100; // achat des free spins = 100x la mise
 
@@ -295,6 +298,10 @@ const speedLbl = $("speedLbl");
 const anteCostEl = $("anteCost");
 const soundBtn = $("soundBtn");
 const sndMenu = $("sndMenu");
+const autoBtn = $("autoBtn");
+const autoMenu = $("autoMenu");
+const autoIco = $("autoIco");
+const autoLbl = $("autoLbl");
 const sfxToggle = $("sfxToggle");
 const musToggle = $("musToggle");
 const allToggle = $("allToggle");
@@ -458,12 +465,39 @@ function puffSmoke(tileEl) {
   }
 }
 
+/* Indices des scatters présents dans une grille de cellules. */
+function scatterIndices(cells) {
+  const out = [];
+  cells.forEach((c, i) => { if (c.t === "SCATTER") out.push(i); });
+  return out;
+}
+
+/* Anticipation : assombrit la grille et fait palpiter les scatters quand
+   il y en a 3 à l'écran (tension « il en manque un » pour les free spins). */
+async function playAnticipation(cells) {
+  if (!hasLayout()) return;
+  const idxs = scatterIndices(cells);
+  gridEl.classList.add("anticip");
+  idxs.forEach((i) => { const t = tileAt[i]; if (t) t.classList.add("anticip"); });
+  Snd.anticip();
+  await sleep(dur(1100));
+  gridEl.classList.remove("anticip");
+  idxs.forEach((i) => { const t = tileAt[i]; if (t) t.classList.remove("anticip"); });
+  await sleep(dur(120));
+}
+
 /* ----------------------------------------------------------------------
    Animation d'un round (descente + cascades)
    ---------------------------------------------------------------------- */
 async function animateRound(round, onPartial) {
   const frames = round.frames;
   let unitWin = 0;
+  let anticipated = false;
+  // Anticipation dès que 3 scatters (ou plus) sont visibles à un moment du round.
+  const maybeAnticip = async (cells) => {
+    if (anticipated) return;
+    if (scatterIndices(cells).length >= 3) { anticipated = true; await playAnticipation(cells); }
+  };
   Snd.spin();
   dropIn(frames[0].cells);              // descente initiale (toutes les colonnes)
   if (hasLayout()) {
@@ -475,13 +509,14 @@ async function animateRound(round, onPartial) {
   } else {
     Snd.land();
   }
+  await maybeAnticip(frames[0].cells);   // scatters dès la descente initiale
   let i = 0;
   while (frames[i] && frames[i].winCells.length) {
     unitWin += frames[i].stepWin;
     Snd.win(frames[i].stepWin);
     if (onPartial) onPartial(unitWin);
     await clearWinners(frames[i].winCells);
-    if (frames[i + 1]) await tumbleTo(frames[i + 1].cells);
+    if (frames[i + 1]) { await tumbleTo(frames[i + 1].cells); await maybeAnticip(frames[i + 1].cells); }
     i++;
   }
   if (round.multSum > 0 && unitWin > 0) Snd.orb();
@@ -580,8 +615,10 @@ async function runFreeSpins(bought = false) {
   fsOverlay.classList.add("show");
   await new Promise((res) => {
     const btn = $("fsStart");
-    const handler = () => { btn.removeEventListener("click", handler); res(); };
-    btn.addEventListener("click", handler);
+    let auto = null;
+    const done = () => { btn.removeEventListener("click", done); if (auto) clearTimeout(auto); res(); };
+    btn.addEventListener("click", done);
+    if (state.autoActive) auto = setTimeout(done, 1500);   // auto-valide en autoplay
   });
   fsOverlay.classList.remove("show");
   Snd.fsMusic();                       // bascule sur la musique de free spins
@@ -603,8 +640,7 @@ async function runFreeSpins(bought = false) {
     let w = r.baseWin;
     if (w > 0) w *= (persist > 0 ? persist : 1);
     const sc = r.scatters;
-    if (sc >= 6) w += CFG.SCATTER_PAYS[6];
-    else if (CFG.SCATTER_PAYS[sc]) w += CFG.SCATTER_PAYS[sc];
+    w += scatterPay(sc);
     fsWin += w;
     if (fsWin > CFG.MAX_WIN) { fsWin = CFG.MAX_WIN; }
     const retrig = sc >= 3;
@@ -654,8 +690,7 @@ async function spin() {
   }
   // gains directs scatter
   const sc = res.scatters;
-  if (sc >= 6) unitWin += CFG.SCATTER_PAYS[6];
-  else if (CFG.SCATTER_PAYS[sc]) unitWin += CFG.SCATTER_PAYS[sc];
+  unitWin += scatterPay(sc);
   if (unitWin > CFG.MAX_WIN) unitWin = CFG.MAX_WIN;
 
   // crediter
@@ -743,6 +778,46 @@ function setBusy(b) {
 function flashInsufficient() {
   balanceEl.style.color = "#ff5b5b";
   setTimeout(() => (balanceEl.style.color = ""), 600);
+}
+
+/* ----------------------------------------------------------------------
+   Autoplay : enchaîne des spins jusqu'à épuisement du compteur,
+   solde insuffisant, ou arrêt manuel.
+   ---------------------------------------------------------------------- */
+function updateAutoUI() {
+  autoBtn.classList.toggle("running", state.autoActive);
+  if (state.autoActive) {
+    autoLbl.textContent = state.auto < 0 ? "STOP" : (state.auto + " ▸");
+    autoBtn.title = "Arrêter les tours automatiques";
+  } else {
+    autoLbl.textContent = "AUTO";
+    autoBtn.title = "Tours automatiques";
+  }
+}
+function stopAuto() {
+  state.autoActive = false;
+  state.auto = 0;
+  updateAutoUI();
+}
+async function runAuto() {
+  while (state.autoActive && state.auto !== 0) {
+    if (state.balance < round2(spinCost())) { flashInsufficient(); break; }
+    if (state.auto > 0) state.auto--;
+    updateAutoUI();
+    await spin();
+    if (!state.autoActive) break;            // arrêt manuel pendant le spin
+    await sleep(dur(260));                    // petite pause entre deux tours
+  }
+  stopAuto();
+}
+function startAuto(n) {
+  if (state.autoActive) return;
+  autoMenu.classList.remove("show");
+  if (state.balance < round2(spinCost())) { flashInsufficient(); return; }
+  state.autoActive = true;
+  state.auto = n;                            // -1 = illimité
+  updateAutoUI();
+  runAuto();
 }
 
 /* ----------------------------------------------------------------------
@@ -874,6 +949,21 @@ speedBtn.addEventListener("click", () => {
   state.speedIndex = (state.speedIndex + 1) % SPEEDS.length;  // modifiable même en free spins
   updateSpeed();
 });
+autoBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  Snd.click();
+  if (state.autoActive) { stopAuto(); return; }   // en cours -> stop
+  if (state.busy) return;                          // pas pendant un spin manuel
+  autoMenu.classList.toggle("show");
+});
+autoMenu.querySelectorAll(".auto-opt").forEach((opt) => {
+  opt.addEventListener("click", (e) => {
+    e.stopPropagation();
+    Snd.click();
+    startAuto(parseInt(opt.dataset.n, 10));
+  });
+});
+document.addEventListener("click", () => { autoMenu.classList.remove("show"); });
 payBtn.addEventListener("click", () => { Snd.click(); ptOverlay.classList.add("show"); });
 ptClose.addEventListener("click", () => { Snd.click(); ptOverlay.classList.remove("show"); });
 ptOverlay.addEventListener("click", (e) => { if (e.target === ptOverlay) ptOverlay.classList.remove("show"); });
@@ -917,4 +1007,47 @@ buildPaytable();
 updateBet();
 updateSpeed();
 updateSndMenu();
+updateAutoUI();
 balanceEl.textContent = fmt(state.balance);
+
+/* ----------------------------------------------------------------------
+   Écran de chargement : précharge les images (symboles + décor),
+   affiche la progression, puis se retire en fondu.
+   ---------------------------------------------------------------------- */
+(function preloadAssets() {
+  if (typeof Image === "undefined" || typeof document === "undefined") return; // headless
+  const loader = $("loader");
+  if (!loader) return;
+  const fill = $("loaderFill"), pct = $("loaderPct");
+  const bg = $("bgArt");
+  const bgSrc = bg && typeof bg.getAttribute === "function" ? bg.getAttribute("src") : null;
+  const urls = Object.keys(SYM_FILE).map(symSrc);
+  if (bgSrc) urls.push(bgSrc);
+
+  let done = 0;
+  const total = urls.length;
+  let finished = false;
+  const setProgress = (n) => {
+    const p = total ? Math.round((n / total) * 100) : 100;
+    if (fill) fill.style.width = p + "%";
+    if (pct) pct.textContent = p + "%";
+  };
+  const hide = () => {
+    if (finished) return;
+    finished = true;
+    setProgress(total);
+    loader.classList.add("hide");
+    setTimeout(() => loader.remove(), 600);
+  };
+  const tick = () => { done++; setProgress(done); if (done >= total) hide(); };
+
+  setProgress(0);
+  urls.forEach((u) => {
+    const img = new Image();
+    img.onload = tick;
+    img.onerror = tick;       // on n'attend pas une image cassée
+    img.src = u;
+  });
+  if (total === 0) hide();
+  setTimeout(hide, 6000);     // garde-fou : ne jamais rester bloqué
+})();

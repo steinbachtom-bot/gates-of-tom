@@ -4,7 +4,7 @@
 const fs = require("fs");
 const vm = require("vm");
 
-const DIR = "/sessions/dazzling-lucid-bardeen/mnt/Gates of Tom/";
+const DIR = __dirname + "/";
 const engineSrc = fs.readFileSync(DIR + "engine.js", "utf8");
 const gameSrc = fs.readFileSync(DIR + "game.js", "utf8");
 
@@ -34,6 +34,8 @@ function makeEl(id) {
     },
     removeEventListener: () => {},
     querySelector: (sel) => getEl(sel.replace("#", "")),
+    querySelectorAll: () => [],
+    getAttribute: () => null,
   };
   return el;
 }

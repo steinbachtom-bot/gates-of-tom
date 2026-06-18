@@ -83,10 +83,11 @@ function generateRound(){
   return {frames, multSum, scatters, baseWin};
 }
 
-/* Gain direct des scatters (x mise). */
+/* Gain direct des scatters (x mise). Scalé par PAY_SCALE comme les autres gains
+   (aligne le JS sur la calibration Python et sur la table GAINS affichée). */
 function scatterPay(sc){
-  if(sc>=6) return CFG.SCATTER_PAYS[6];
-  return CFG.SCATTER_PAYS[sc] || 0;
+  if(sc>=6) return CFG.SCATTER_PAYS[6]*CFG.PAY_SCALE;
+  return (CFG.SCATTER_PAYS[sc] || 0)*CFG.PAY_SCALE;
 }
 
 /* Resolution MATH pure (sans animation) — sert de source de verite et de test. */

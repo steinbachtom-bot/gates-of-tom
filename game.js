@@ -213,6 +213,7 @@ const Snd = (() => {
     win(mult) { if (!ensure()) return; if (hitBuf) { playBuf(hitBuf, 0.45); return; } const t = now(); const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5]; const n = Math.max(1, Math.min(notes.length, 1 + Math.floor((mult || 0) / 2))); for (let i = 0; i < n; i++) tone(notes[i], t + i * 0.07, 0.2, { type: "triangle", gain: 0.13 }); },
     scatter() { if (!ensure()) return; const t = now(); tone(660, t, 0.5, { type: "sine", gain: 0.15, to: 990 }); noise(t, 0.5, { gain: 0.05, freq: 700, type: "bandpass", q: 2 }); },
     anticip() { if (!ensure()) return; const t = now(); tone(220, t, 1.1, { type: "sawtooth", gain: 0.12, to: 660 }); tone(110, t, 1.1, { type: "sine", gain: 0.10, to: 220 }); noise(t, 1.1, { gain: 0.04, freq: 900, type: "bandpass", q: 3 }); },
+    orbZap(i) { if (!ensure()) return; const t = now(); const base = 520 + (i || 0) * 80; tone(base, t, 0.18, { type: "sawtooth", gain: 0.10, to: base * 2 }); tone(base * 1.5, t + 0.02, 0.16, { type: "triangle", gain: 0.06, to: base * 3 }); noise(t, 0.12, { gain: 0.05, freq: 3200, type: "highpass" }); },
     fsTrigger() { if (!ensure()) return; const t = now(); [392, 523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, t + i * 0.13, 0.55, { type: "sawtooth", gain: 0.12 })); tone(98, t, 1.3, { type: "sine", gain: 0.16, to: 196 }); },
     bigWin() { if (!ensure()) return; const t = now(); [523.25, 659.25, 783.99, 1046.5, 1318.5, 1568].forEach((f, i) => tone(f, t + i * 0.09, 0.42, { type: "triangle", gain: 0.15 })); },
   };
@@ -487,6 +488,143 @@ async function playAnticipation(cells) {
 }
 
 /* ----------------------------------------------------------------------
+   Effets de gain : count-up, étincelles, popups, révélation des orbes
+   ---------------------------------------------------------------------- */
+// Calque plein écran pour les particules/popups (au-dessus de tout).
+let fxLayer = null;
+function getFxLayer() {
+  if (fxLayer) return fxLayer;
+  if (typeof document === "undefined" || !document.body) return null;
+  fxLayer = document.createElement("div");
+  fxLayer.className = "fx-layer";
+  document.body.appendChild(fxLayer);
+  return fxLayer;
+}
+
+// Compteur qui défile sur un élément (ease-out). Headless : valeur finale directe.
+function countUpEl(el, from, to, ms) {
+  if (!el) return Promise.resolve();
+  if (!hasLayout() || typeof requestAnimationFrame !== "function") { el.textContent = fmt(to); return Promise.resolve(); }
+  const t0 = performance.now();
+  return new Promise((res) => {
+    function step(nowT) {
+      const k = Math.min(1, (nowT - t0) / ms);
+      const e = 1 - Math.pow(1 - k, 3);
+      el.textContent = fmt(from + (to - from) * e);
+      if (k < 1) requestAnimationFrame(step); else { el.textContent = fmt(to); res(); }
+    }
+    requestAnimationFrame(step);
+  });
+}
+function pulseGain() {
+  if (!hasLayout()) return;
+  winValEl.classList.remove("pulse"); void winValEl.offsetWidth; winValEl.classList.add("pulse");
+}
+function pulsePill(el) {
+  if (!hasLayout() || !el) return;
+  el.classList.remove("pulse"); void el.offsetWidth; el.classList.add("pulse");
+}
+async function countUpWin(from, to) { pulseGain(); await countUpEl(winValEl, from, to, 500); }
+
+// Gerbe d'étincelles dorées (ou ichor) à une position écran.
+function sparkBurst(cx, cy, n, kind) {
+  const layer = getFxLayer();
+  if (!hasLayout() || !layer) return;
+  for (let k = 0; k < n; k++) {
+    const s = document.createElement("div");
+    s.className = "spark" + (kind === "ichor" ? " ichor" : "");
+    const ang = Math.random() * Math.PI * 2;
+    const dist = 38 + Math.random() * 92;
+    const sz = 3 + Math.random() * 4;
+    s.style.left = cx + "px"; s.style.top = cy + "px";
+    s.style.width = sz + "px"; s.style.height = sz + "px";
+    s.style.setProperty("--dx", Math.cos(ang) * dist + "px");
+    s.style.setProperty("--dy", (Math.sin(ang) * dist - 28) + "px");
+    s.style.setProperty("--life", (0.5 + Math.random() * 0.5) + "s");
+    layer.appendChild(s);
+    const node = s; setTimeout(() => node.remove(), 1100);
+  }
+}
+// Montant « +X » flottant qui monte et s'estompe.
+function floatWin(cx, cy, text, big) {
+  const layer = getFxLayer();
+  if (!hasLayout() || !layer) return;
+  const p = document.createElement("div");
+  p.className = "winpop" + (big ? " big" : "");
+  p.textContent = text;
+  p.style.left = cx + "px"; p.style.top = cy + "px";
+  layer.appendChild(p);
+  const node = p; setTimeout(() => node.remove(), 1300);
+}
+// Étincelles au centre de la grille.
+function gridSparks(n, kind) {
+  if (!hasLayout()) return;
+  const r = gridEl.getBoundingClientRect();
+  sparkBurst(r.left + r.width / 2, r.top + r.height / 2, n, kind);
+}
+// Popup de gain d'une cascade, au centre de la grille (décalé selon la cascade).
+function popCascadeWin(stepWin, cascadeIdx) {
+  if (!hasLayout() || stepWin <= 0) return;
+  const r = gridEl.getBoundingClientRect();
+  const cx = r.left + r.width / 2;
+  const cy = r.top + r.height * (0.52 - Math.min(cascadeIdx, 3) * 0.05);
+  floatWin(cx, cy, "+" + fmt(stepWin * bet()), cascadeIdx > 0);
+  sparkBurst(cx, cy, 7 + Math.min(cascadeIdx, 4) * 3, "gold");
+}
+
+// Badge « xN » spectaculaire au centre de la zone de jeu.
+async function flashMultTotal(sum) {
+  const stage = $("stage");
+  if (!hasLayout() || !stage) return;
+  const el = document.createElement("div");
+  el.className = "mult-flash";
+  el.textContent = "x" + sum;
+  stage.appendChild(el);
+  await sleep(dur(640));
+  el.classList.add("out");
+  await sleep(dur(300));
+  el.remove();
+}
+
+/* Révélation des orbes : chaque orbe « zappe » (éclair + son montant + étincelles),
+   les valeurs s'additionnent, puis un badge « xN » s'affiche. Retourne la somme. */
+async function revealMultipliers(cells) {
+  if (!hasLayout()) return 0;
+  const orbs = [];
+  cells.forEach((c, i) => { if (c.t === "MULT") orbs.push({ i, v: c.v }); });
+  if (!orbs.length) return 0;
+  let sum = 0;
+  const fast = orbs.length > 5;            // beaucoup d'orbes : on accélère
+  for (let k = 0; k < orbs.length; k++) {
+    const { i, v } = orbs[k];
+    const t = tileAt[i];
+    sum += v;
+    if (t) {
+      t.classList.add("zap");
+      Snd.orbZap(k);
+      const r = t.getBoundingClientRect();
+      sparkBurst(r.left + r.width / 2, r.top + r.height / 2, 9, "gold");
+      await sleep(dur(fast ? 90 : 175));
+      t.classList.remove("zap");
+    }
+  }
+  if (sum > 1) await flashMultTotal(sum);
+  return sum;
+}
+
+/* Crédite un gain (en multiples de la mise) : solde qui défile + étincelles + Big Win. */
+async function creditWin(unitWin) {
+  if (unitWin <= 0) return;
+  const w = round2(unitWin * bet());
+  const bal0 = state.balance;
+  state.balance = round2(state.balance + w);
+  winValEl.textContent = fmt(w); pulseGain();
+  gridSparks(Math.min(34, 8 + Math.round(unitWin)), "gold");
+  await countUpEl(balanceEl, bal0, state.balance, 650);
+  if (unitWin >= 20) await showBanner(unitWin);
+}
+
+/* ----------------------------------------------------------------------
    Animation d'un round (descente + cascades)
    ---------------------------------------------------------------------- */
 async function animateRound(round, onPartial) {
@@ -514,12 +652,12 @@ async function animateRound(round, onPartial) {
   while (frames[i] && frames[i].winCells.length) {
     unitWin += frames[i].stepWin;
     Snd.win(frames[i].stepWin);
-    if (onPartial) onPartial(unitWin);
+    popCascadeWin(frames[i].stepWin, i);   // « +X » flottant + étincelles par cascade
+    if (onPartial) { onPartial(unitWin); pulseGain(); }
     await clearWinners(frames[i].winCells);
     if (frames[i + 1]) { await tumbleTo(frames[i + 1].cells); await maybeAnticip(frames[i + 1].cells); }
     i++;
   }
-  if (round.multSum > 0 && unitWin > 0) Snd.orb();
   return { baseWin: unitWin, multSum: round.multSum, scatters: round.scatters };
 }
 
@@ -636,19 +774,29 @@ async function runFreeSpins(bought = false) {
     spins--;
     const r = generateRound();
     await animateRound(r, null);
+    // révélation des orbes du tour (ils s'ajoutent au multiplicateur persistant)
+    if (r.multSum > 0) {
+      const fc = r.frames[r.frames.length - 1].cells;
+      await revealMultipliers(fc);
+    }
     persist += r.multSum;
     let w = r.baseWin;
     if (w > 0) w *= (persist > 0 ? persist : 1);
     const sc = r.scatters;
     w += scatterPay(sc);
+    const fsBefore = fsWin;
     fsWin += w;
     if (fsWin > CFG.MAX_WIN) { fsWin = CFG.MAX_WIN; }
     const retrig = sc >= 3;
     if (retrig) spins += CFG.FS_RETRIG;
     setHud();
+    if (r.multSum > 0) pulsePill($("fsMult"));
     if (w > 0) {
-      winValEl.textContent = fmt(fsWin * bet());
-      await sleep(350);
+      const to = fsWin * bet();
+      winValEl.textContent = fmt(to); pulseGain();
+      gridSparks(Math.min(28, 6 + Math.round(w)), "ichor");
+      await countUpEl($("fsWin"), fsBefore * bet(), to, 450);
+      await sleep(180);
     }
     if (retrig) await showStageToast("RETRIGGER", "+" + CFG.FS_RETRIG + " FREE SPINS", 1400);
     if (fsWin >= CFG.MAX_WIN) break;
@@ -681,38 +829,27 @@ async function spin() {
     winValEl.textContent = fmt(uw * bet());
   });
 
-  // multiplicateurs du jeu de base
+  // multiplicateurs du jeu de base : révélation des orbes (éclairs + total) puis count-up
   let unitWin = res.baseWin;
   if (unitWin > 0 && res.multSum > 0) {
+    const finalCells = round.frames[round.frames.length - 1].cells;
+    await revealMultipliers(finalCells);
+    const before = unitWin * bet();
     unitWin *= res.multSum;
-    winValEl.textContent = fmt(unitWin * bet());
-    await sleep(500);
+    await countUpWin(before, unitWin * bet());
   }
   // gains directs scatter
   const sc = res.scatters;
   unitWin += scatterPay(sc);
   if (unitWin > CFG.MAX_WIN) unitWin = CFG.MAX_WIN;
 
-  // crediter
-  let totalUnit = unitWin;
-  if (totalUnit > 0) {
-    const w = round2(totalUnit * bet());
-    state.balance = round2(state.balance + w);
-    balanceEl.textContent = fmt(state.balance);
-    winValEl.textContent = fmt(w);
-    if (totalUnit >= 20) await showBanner(totalUnit);
-  }
+  // crediter (count-up du solde + étincelles proportionnelles au gain)
+  await creditWin(unitWin);
 
   // free spins ?
   if (sc >= CFG.TRIGGER) {
     const fsUnit = await runFreeSpins();
-    if (fsUnit > 0) {
-      const w = round2(fsUnit * bet());
-      state.balance = round2(state.balance + w);
-      balanceEl.textContent = fmt(state.balance);
-      winValEl.textContent = fmt(w);
-      if (fsUnit >= 20) await showBanner(fsUnit);
-    }
+    await creditWin(fsUnit);
   }
 
   spinBtn.classList.remove("spinning");
@@ -757,13 +894,7 @@ async function buyBonus() {
 
   await animateTriggerSpin();          // tour avec les 4 scatters qui tombent
   const fsUnit = await runFreeSpins(true);
-  if (fsUnit > 0) {
-    const w = round2(fsUnit * bet());
-    state.balance = round2(state.balance + w);
-    balanceEl.textContent = fmt(state.balance);
-    winValEl.textContent = fmt(w);
-    if (fsUnit >= 20) await showBanner(fsUnit);
-  }
+  await creditWin(fsUnit);
   setBusy(false);
 }
 

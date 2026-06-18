@@ -223,9 +223,9 @@ const SYM_FILE = {
   hourglass:  "demon.png",     // Premium II
   ring:       "zeus.png",      // Premium III
   chalice:    "redmask.png",   // Premium IV
-  gem_red:    "ruby.png",
+  gem_red:    "laurel.png",
   gem_purple: "crown2.png",
-  gem_yellow: "laurel.png",
+  gem_yellow: "ruby.png",
   gem_green:  "emerald.png",
   gem_blue:   "sapphire.png",
   SCATTER:    "orb.png",
@@ -302,7 +302,7 @@ const allToggle = $("allToggle");
 /* Noms d'affichage (selon l'art applique) */
 const SYM_NAME = {
   crown: "Roi-lion", hourglass: "Seigneur démon", ring: "Zeus cornu", chalice: "Masque démon",
-  gem_red: "Rubis", gem_purple: "Couronne", gem_yellow: "Laurier", gem_green: "Émeraude", gem_blue: "Saphir",
+  gem_red: "Laurier", gem_purple: "Couronne", gem_yellow: "Rubis", gem_green: "Émeraude", gem_blue: "Saphir",
   SCATTER: "Orbe d'Olympe",
 };
 

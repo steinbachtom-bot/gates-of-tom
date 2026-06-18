@@ -217,6 +217,51 @@
   .smoke.go{animation:puff var(--life,.6s) ease-out forwards;}
   .smoke.ichor{background:radial-gradient(circle, rgba(127,227,210,.5), rgba(31,79,73,.25) 46%, transparent 72%);}
 
+  /* ---- effets de gain : étincelles, popups, révélation des orbes ---- */
+  .fx-layer{position:fixed; inset:0; z-index:50; pointer-events:none; overflow:hidden;}
+  .spark{position:absolute; border-radius:50%; transform:translate(-50%,-50%);
+    background:radial-gradient(circle, var(--gold-hi), var(--gold) 55%, transparent 75%);
+    box-shadow:0 0 8px rgba(232,198,74,.9); opacity:0;
+    animation:sparkFly var(--life,.7s) ease-out forwards;}
+  .spark.ichor{background:radial-gradient(circle, #d6fff5, var(--ichor) 55%, transparent 75%);
+    box-shadow:0 0 8px rgba(127,227,210,.9);}
+  @keyframes sparkFly{
+    0%{opacity:1; transform:translate(-50%,-50%) scale(1);}
+    100%{opacity:0; transform:translate(calc(-50% + var(--dx,0)), calc(-50% + var(--dy,0))) scale(.4);}
+  }
+  .winpop{position:absolute; transform:translate(-50%,-50%); white-space:nowrap;
+    font-family:"Cinzel Decorative",serif; font-weight:700; font-size:clamp(17px,2.2vw,28px);
+    color:var(--gold-hi); text-shadow:0 2px 0 var(--oxblood-deep), 0 0 18px rgba(201,162,39,.6);
+    opacity:0; animation:winPopRise 1.2s cubic-bezier(.2,.8,.3,1) forwards;}
+  .winpop.big{color:var(--ichor); font-size:clamp(22px,3vw,40px);
+    text-shadow:0 2px 0 var(--oxblood-deep), 0 0 22px rgba(127,227,210,.6);}
+  @keyframes winPopRise{
+    0%{opacity:0; transform:translate(-50%,-50%) scale(.6);}
+    20%{opacity:1; transform:translate(-50%,-72%) scale(1.05);}
+    75%{opacity:1;}
+    100%{opacity:0; transform:translate(-50%,-150%) scale(1);}
+  }
+  .mult-flash{position:absolute; left:50%; top:46%; transform:translate(-50%,-50%);
+    z-index:5; pointer-events:none; font-family:"Cinzel Decorative",serif; font-weight:700;
+    font-size:13cqw; line-height:1;
+    background:var(--gold-foil); -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 0 40px rgba(201,162,39,.5); filter:drop-shadow(0 3px 0 var(--oxblood-deep));
+    animation:multFlashIn .42s cubic-bezier(.2,1.5,.4,1) forwards;}
+  .mult-flash.out{animation:multFlashOut .3s ease-in forwards;}
+  @keyframes multFlashIn{0%{opacity:0; transform:translate(-50%,-50%) scale(.3);}100%{opacity:1; transform:translate(-50%,-50%) scale(1);}}
+  @keyframes multFlashOut{0%{opacity:1; transform:translate(-50%,-50%) scale(1);}100%{opacity:0; transform:translate(-50%,-50%) scale(1.4);}}
+  /* orbe qui « zappe » pendant la révélation des multiplicateurs */
+  .tile.zap{z-index:4;}
+  .tile.zap .mult-orb{animation:orbZap .42s ease-out;}
+  .tile.zap .orb-core{box-shadow:0 0 40px rgba(249,237,180,1), 0 0 72px rgba(201,162,39,.85),
+    inset -5px -7px 16px rgba(26,10,14,.7), inset 5px 6px 14px rgba(255,246,224,.9);}
+  .tile.zap .orb-core .v{color:#fff; text-shadow:0 0 10px rgba(249,237,180,.95);}
+  @keyframes orbZap{0%{transform:scale(var(--ms,1));}40%{transform:scale(calc(var(--ms,1) * 1.42));}100%{transform:scale(var(--ms,1));}}
+  /* pulsation de la valeur GAIN à chaque crédit */
+  .stat.win .val.pulse{animation:gainPulse .42s ease;}
+  @keyframes gainPulse{0%{transform:scale(1);}40%{transform:scale(1.16); color:var(--gold-hi);}100%{transform:scale(1);}}
+  .fs-pill b.pulse{animation:gainPulse .42s ease;}
+
   /* controls */
   .controls{display:flex; align-items:center; justify-content:center; gap:14px;
     padding:18px 12px 12px; width:100%; max-width:780px; flex-wrap:wrap;}

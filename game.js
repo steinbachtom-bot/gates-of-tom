@@ -366,10 +366,12 @@ function makeTile(cell) {
 function placeAt(el, c, r) { el.style.gridColumn = c + 1; el.style.gridRow = r + 1; }
 
 /* Descente complete : toutes les tuiles tombent du haut, en vague par colonne. */
-function dropIn(cells) {
+function dropIn(cells, animate = true) {
   gridEl.innerHTML = "";
   tileAt = new Array(CFG.CELLS).fill(null);
-  const H = hasLayout() ? gridEl.getBoundingClientRect().height : 0;
+  // Remplissage statique (animate=false) pour le tout premier rendu : évite que
+  // l'animation de chute se fige si le layout (fond portrait) n'est pas encore stable.
+  const H = (animate && hasLayout()) ? gridEl.getBoundingClientRect().height : 0;
   for (let c = 0; c < CFG.REELS; c++) {
     for (let r = 0; r < CFG.ROWS; r++) {
       const i = idx(c, r);
@@ -1187,7 +1189,7 @@ if (emberLayer) {
   }
 }
 
-dropIn(Array.from({ length: CFG.CELLS }, newCell));
+dropIn(Array.from({ length: CFG.CELLS }, newCell), false);   // remplissage initial statique (pas d'animation)
 buildPaytable();
 loadSettings();          // réglages sauvegardés (mise, vitesse, sons) — pas le solde
 updateBet();

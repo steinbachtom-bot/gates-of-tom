@@ -432,6 +432,12 @@
     text-shadow:0 0 40px rgba(201,162,39,.35); filter:drop-shadow(0 2px 0 var(--oxblood-deep));}
   .bw-amount{font-family:"Cinzel Decorative",serif; font-weight:700; font-size:9.5cqw; line-height:1.05;
     color:var(--gold-hi); text-shadow:0 0 32px rgba(249,237,180,.6); margin-top:1.5%; font-variant-numeric:tabular-nums;}
+  /* indice « appuyez pour continuer » : apparaît après le décompte */
+  .bw-hint{font-family:"Barlow Semi Condensed",sans-serif; text-transform:uppercase; letter-spacing:.26em;
+    font-size:2.6cqw; color:var(--bone-dim); margin-top:3.5%; opacity:0; pointer-events:none;
+    transition:opacity .4s;}
+  .bw-hint.show{opacity:.85; animation:hintPulse 1.8s ease-in-out infinite;}
+  @keyframes hintPulse{0%,100%{opacity:.45;}50%{opacity:.9;}}
 
   /* panneau éphémère dans la zone de jeu (retrigger / fin free spins) */
   .toast{position:absolute; inset:0; z-index:7; display:none; flex-direction:column;
@@ -616,6 +622,7 @@
       <div class="bw-content">
         <div class="bw-tag" id="bwTag">BIG WIN</div>
         <div class="bw-amount" id="bwAmount">0</div>
+        <div class="bw-hint" id="bwHint">Appuyez pour continuer</div>
       </div>
     </div>
     <div class="toast" id="toast">

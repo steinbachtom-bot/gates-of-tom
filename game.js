@@ -676,6 +676,7 @@ function bigWinTier(u) {
 const bwVideo = $("bwVideo");
 const bwTag = $("bwTag");
 const bwAmount = $("bwAmount");
+const bwHint = $("bwHint");
 
 /* Choix de la vidéo Big Win selon l'orientation : portrait (mobile) ou 16:9 (desktop). */
 function bigWinVideoUrl() {
@@ -714,21 +715,23 @@ async function showBanner(unitWin) {
   ensureBigWinSrc();                      // source vidéo selon l'orientation (portrait / 16:9)
   const prevTrack = Snd.trackName();
   Snd.setTrack("bigwin");                 // musique dédiée au Big Win
+  if (bwHint) bwHint.classList.remove("show");
   bwAmount.textContent = fmt(0);
   winBanner.classList.add("show");
   document.body.classList.add("bigwin-active");   // masque HUD/contrôles pendant la célébration (mobile)
+  bwVideo.loop = true;                            // boucle parfaite : la célébration continue
   try { bwVideo.currentTime = 0; const p = bwVideo.play(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* ignore */ }
 
-  // clic pour passer
-  let skipped = false;
-  const onSkip = () => { skipped = true; };
-  winBanner.addEventListener("click", onSkip);
+  // tap : pendant le décompte => accélère ; une fois le décompte fini => ferme
+  let countDone = false, fastFwd = false, dismiss = false;
+  const onTap = () => { if (!countDone) fastFwd = true; else dismiss = true; };
+  winBanner.addEventListener("click", onTap);
 
   // compteur qui défile (ease-out)
   const T = 3000, t0 = performance.now();
   await new Promise((res) => {
     function step(nowT) {
-      if (skipped) { res(); return; }
+      if (fastFwd) { res(); return; }
       const k = Math.min(1, (nowT - t0) / T);
       const e = 1 - Math.pow(1 - k, 3);
       bwAmount.textContent = fmt(chips * e);
@@ -737,20 +740,20 @@ async function showBanner(unitWin) {
     requestAnimationFrame(step);
   });
   bwAmount.textContent = fmt(chips);
+  countDone = true;
 
-  // garder l'écran jusqu'à la fin de la vidéo (ou clic pour passer)
-  if (!skipped) {
-    await new Promise((res) => {
-      let iv, safety;
-      const finish = () => { clearInterval(iv); clearTimeout(safety); res(); };
-      iv = setInterval(() => { if (skipped) finish(); }, 100);
-      bwVideo.addEventListener("ended", finish, { once: true });
-      const d = (bwVideo.duration && isFinite(bwVideo.duration)) ? bwVideo.duration : 15;
-      safety = setTimeout(finish, Math.max(800, (d - (bwVideo.currentTime || 0)) * 1000 + 400));
-    });
-  }
+  // l'écran RESTE jusqu'à ce que le joueur tape (la vidéo tourne en boucle).
+  // En autoplay, on referme tout seul après quelques secondes pour ne pas bloquer.
+  if (bwHint) bwHint.classList.add("show");
+  await new Promise((res) => {
+    let iv, autoTimer;
+    const finish = () => { clearInterval(iv); clearTimeout(autoTimer); res(); };
+    iv = setInterval(() => { if (dismiss) finish(); }, 80);
+    if (state.autoActive) autoTimer = setTimeout(finish, 6000);
+  });
+  if (bwHint) bwHint.classList.remove("show");
 
-  winBanner.removeEventListener("click", onSkip);
+  winBanner.removeEventListener("click", onTap);
   winBanner.classList.remove("show");
   document.body.classList.remove("bigwin-active");
   try { bwVideo.pause(); } catch (e) { /* ignore */ }

@@ -676,6 +676,18 @@ function bigWinTier(u) {
 const bwVideo = $("bwVideo");
 const bwTag = $("bwTag");
 const bwAmount = $("bwAmount");
+
+/* Choix de la vidéo Big Win selon l'orientation : portrait (mobile) ou 16:9 (desktop). */
+function bigWinVideoUrl() {
+  const portrait = typeof window !== "undefined" && window.matchMedia &&
+    window.matchMedia("(orientation: portrait) and (max-width: 760px)").matches;
+  return portrait ? (window.BIGWIN_PORTRAIT_URL || window.BIGWIN_URL) : window.BIGWIN_URL;
+}
+function ensureBigWinSrc() {
+  if (!bwVideo) return;
+  const url = bigWinVideoUrl();
+  if (url && bwVideo.getAttribute("src") !== url) { bwVideo.setAttribute("src", url); bwVideo.load(); }
+}
 const toastEl = $("toast");
 const toastTag = $("toastTag");
 const toastBig = $("toastBig");
@@ -699,10 +711,12 @@ async function showBanner(unitWin) {
   // headless / pas de DOM animable : on ne joue pas l'écran
   if (typeof requestAnimationFrame !== "function" || !hasLayout()) return;
 
+  ensureBigWinSrc();                      // source vidéo selon l'orientation (portrait / 16:9)
   const prevTrack = Snd.trackName();
   Snd.setTrack("bigwin");                 // musique dédiée au Big Win
   bwAmount.textContent = fmt(0);
   winBanner.classList.add("show");
+  document.body.classList.add("bigwin-active");   // masque HUD/contrôles pendant la célébration (mobile)
   try { bwVideo.currentTime = 0; const p = bwVideo.play(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* ignore */ }
 
   // clic pour passer
@@ -738,6 +752,7 @@ async function showBanner(unitWin) {
 
   winBanner.removeEventListener("click", onSkip);
   winBanner.classList.remove("show");
+  document.body.classList.remove("bigwin-active");
   try { bwVideo.pause(); } catch (e) { /* ignore */ }
   Snd.setTrack(prevTrack);                // retour à la musique précédente
   await sleep(300);

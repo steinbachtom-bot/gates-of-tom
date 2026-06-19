@@ -549,6 +549,12 @@
     .controls{position:fixed; left:0; right:0; bottom:0; z-index:20; margin:0; max-width:none;
       padding:8px 10px calc(10px + env(safe-area-inset-bottom)); gap:8px;
       background:linear-gradient(to top, rgba(6,4,4,.92), rgba(6,4,4,.5) 55%, transparent);}
+
+    /* pendant le Big Win : la célébration prend tout l'écran, l'UI se retire */
+    body.bigwin-active .hudbar,
+    body.bigwin-active .fs-hud,
+    body.bigwin-active .controls{display:none;}
+    body.bigwin-active .stage{z-index:70;}
   }
 </style>
 </head>
@@ -606,7 +612,7 @@
       <div class="grid" id="grid"></div>
     </div>
     <div class="bigwin" id="bigWin">
-      <video class="bw-video" id="bwVideo" muted playsinline preload="auto" src="assets/decor/bigwin.mp4"></video>
+      <video class="bw-video" id="bwVideo" muted playsinline preload="none"></video>
       <div class="bw-content">
         <div class="bw-tag" id="bwTag">BIG WIN</div>
         <div class="bw-amount" id="bwAmount">0</div>
@@ -698,7 +704,7 @@
     </div>
   </div>
 
-<script>window.CLICK_URL = "assets/audio/click.mp3"; window.WHOOSH_URL = "assets/audio/whoosh_spin.mp3"; window.HIT_URL = "assets/audio/hit.mp3"; window.LAND_URL = "assets/audio/land.mp3"; window.MUSIC_URL = "assets/audio/music.mp3"; window.FS_MUSIC_URL = "assets/audio/music_fs.mp3"; window.BIGWIN_MUSIC_URL = "assets/audio/bigwin_music.mp3";</script>
+<script>window.CLICK_URL = "assets/audio/click.mp3"; window.WHOOSH_URL = "assets/audio/whoosh_spin.mp3"; window.HIT_URL = "assets/audio/hit.mp3"; window.LAND_URL = "assets/audio/land.mp3"; window.MUSIC_URL = "assets/audio/music.mp3"; window.FS_MUSIC_URL = "assets/audio/music_fs.mp3"; window.BIGWIN_MUSIC_URL = "assets/audio/bigwin_music.mp3"; window.BIGWIN_URL = "assets/decor/bigwin.mp4"; window.BIGWIN_PORTRAIT_URL = "assets/decor/bigwin_portrait.mp4";</script>
 <script src="engine.js"></script>
 <script src="game.js"></script>
 </body>

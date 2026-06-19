@@ -38,13 +38,16 @@ for decor_rel in ("assets/decor/bg_hades_web.jpg", "assets/decor/bg_portrait_web
         html = html.replace('src="' + decor_rel + '"',
                             'src="data:image/jpeg;base64,' + b + '"')
 
-# Embarquer la vidéo Big Win en data-URI
-bw = os.path.join(ROOT, "assets/decor/bigwin.mp4")
-if os.path.exists(bw):
-    with open(bw, "rb") as f:
-        b = base64.b64encode(f.read()).decode("ascii")
-    html = html.replace('src="assets/decor/bigwin.mp4"',
-                        'src="data:video/mp4;base64,' + b + '"')
+# Embarquer les vidéos Big Win (16:9 + portrait) en data-URI.
+# La source est choisie par JS via window.BIGWIN_URL / window.BIGWIN_PORTRAIT_URL :
+# on remplace donc les littéraux de chaîne (pas un attribut src=).
+for vid_rel in ("assets/decor/bigwin.mp4", "assets/decor/bigwin_portrait.mp4"):
+    vid = os.path.join(ROOT, vid_rel)
+    if os.path.exists(vid):
+        with open(vid, "rb") as f:
+            b = base64.b64encode(f.read()).decode("ascii")
+        html = html.replace('"' + vid_rel + '"',
+                            '"data:video/mp4;base64,' + b + '"')
 
 # Embarquer les sons (clic, whoosh) en data-URI
 for path, token in [("assets/audio/click.mp3", '"assets/audio/click.mp3"'),

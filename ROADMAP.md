@@ -36,6 +36,12 @@ Objectif : une math inviolable et une vraie séparation client / serveur.
 
 6. **Séparer math et présentation proprement** 🤖
    - Le client ne doit jamais décider du résultat : il l'affiche seulement.
+6b. **Moteur de rendu WebGL (PixiJS) — approche hybride** 🤖
+   - Migrer la **grille + les effets** (cascades, particules, révélation des orbes, big win, shaders glow/dissolution/éclairs) vers **PixiJS** (rendu 2D WebGL), en **gardant l'UI/menus en HTML** par-dessus (standard studio).
+   - Le moteur math (`engine.js`) reste **inchangé** : c'est uniquement la couche présentation qui change.
+   - Bénéfices : particules en masse, shaders, **60 fps stable sur mobile bas de gamme**, crédibilité B2B (moteur attendu par les opérateurs).
+   - À faire **à ce stade seulement** : aujourd'hui le DOM/CSS suffit pour 30 tuiles + effets modérés et le rendu est déjà soigné.
+   - Option intermédiaire avant migration complète : une simple **couche de particules WebGL/Canvas** (pièces / étincelles / big win) sans toucher au reste = ~80 % du punch visuel pour ~20 % du travail.
 7. **RGS — Remote Gaming Server** 🤖🧑
    - Serveur qui génère les résultats (RNG côté serveur, *server-authoritative*).
    - API de spin standardisée (requête mise → réponse résultat + animation).

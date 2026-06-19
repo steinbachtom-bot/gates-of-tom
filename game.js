@@ -12,7 +12,7 @@ const Snd = (() => {
   let sfxMuted = false, musicMuted = false, musicOn = false, musicTimer = null, droneNodes = [];
   let clickBuf = null, whooshBuf = null, hitBuf = null, landBuf = null, scatterBuf = null, fsTrigBuf = null, orbZapBuf = null, bigWinBuf = null, musicBuf = null, fsMusicBuf = null, bigMusicBuf = null;
   let musicTrack = "base", activeMusic = [];
-  const MUSIC_VOL = 0.5, XF = 1.8;   // volume musique, durée du crossfade (s)
+  const MUSIC_VOL = 0.4, XF = 1.8;   // volume musique (lit ~-23 dBFS), durée du crossfade (s)
 
   function loadBuf(url, set) {
     if (!ctx || !url || typeof window === "undefined" || !window.fetch) return;
@@ -211,16 +211,16 @@ const Snd = (() => {
     setTrack(name) { switchTrack(name); },
     trackName() { return musicTrack; },
     startMusic,
-    spin() { if (!ensure()) return; if (whooshBuf) { playBuf(whooshBuf, 0.25); return; } const t = now(); noise(t, 0.34, { gain: 0.16, freq: 950, type: "lowpass" }); tone(200, t, 0.16, { type: "sawtooth", gain: 0.05, to: 110 }); },
+    spin() { if (!ensure()) return; if (whooshBuf) { playBuf(whooshBuf, 0.45); return; } const t = now(); noise(t, 0.34, { gain: 0.16, freq: 950, type: "lowpass" }); tone(200, t, 0.16, { type: "sawtooth", gain: 0.05, to: 110 }); },
     land() { if (!ensure()) return; if (landBuf) { playBuf(landBuf, 0.3); return; } const t = now(); tone(150, t, 0.07, { type: "sine", gain: 0.10, to: 80 }); },
     pop() { if (!ensure()) return; const t = now(); noise(t, 0.16, { gain: 0.13, freq: 1700, type: "bandpass", q: 0.8 }); },
     orb() { if (!ensure()) return; const t = now(); tone(880, t, 0.2, { type: "triangle", gain: 0.11, to: 1320 }); tone(1320, t + 0.05, 0.2, { type: "sine", gain: 0.07, to: 1760 }); },
-    win(mult) { if (!ensure()) return; if (hitBuf) { playBuf(hitBuf, 0.45); return; } const t = now(); const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5]; const n = Math.max(1, Math.min(notes.length, 1 + Math.floor((mult || 0) / 2))); for (let i = 0; i < n; i++) tone(notes[i], t + i * 0.07, 0.2, { type: "triangle", gain: 0.13 }); },
-    scatter() { if (!ensure()) return; if (scatterBuf) { playBuf(scatterBuf, 0.5); return; } const t = now(); tone(660, t, 0.5, { type: "sine", gain: 0.15, to: 990 }); noise(t, 0.5, { gain: 0.05, freq: 700, type: "bandpass", q: 2 }); },
+    win(mult) { if (!ensure()) return; if (hitBuf) { playBuf(hitBuf, 1.1); return; } const t = now(); const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5]; const n = Math.max(1, Math.min(notes.length, 1 + Math.floor((mult || 0) / 2))); for (let i = 0; i < n; i++) tone(notes[i], t + i * 0.07, 0.2, { type: "triangle", gain: 0.13 }); },
+    scatter() { if (!ensure()) return; if (scatterBuf) { playBuf(scatterBuf, 0.4); return; } const t = now(); tone(660, t, 0.5, { type: "sine", gain: 0.15, to: 990 }); noise(t, 0.5, { gain: 0.05, freq: 700, type: "bandpass", q: 2 }); },
     anticip() { if (!ensure()) return; const t = now(); tone(220, t, 1.1, { type: "sawtooth", gain: 0.12, to: 660 }); tone(110, t, 1.1, { type: "sine", gain: 0.10, to: 220 }); noise(t, 1.1, { gain: 0.04, freq: 900, type: "bandpass", q: 3 }); },
-    orbZap(i) { if (!ensure()) return; if (orbZapBuf) { playBuf(orbZapBuf, 0.5, 1 + Math.min(i || 0, 6) * 0.05); return; } const t = now(); const base = 520 + (i || 0) * 80; tone(base, t, 0.18, { type: "sawtooth", gain: 0.10, to: base * 2 }); tone(base * 1.5, t + 0.02, 0.16, { type: "triangle", gain: 0.06, to: base * 3 }); noise(t, 0.12, { gain: 0.05, freq: 3200, type: "highpass" }); },
-    fsTrigger() { if (!ensure()) return; if (fsTrigBuf) { playBuf(fsTrigBuf, 0.6); return; } const t = now(); [392, 523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, t + i * 0.13, 0.55, { type: "sawtooth", gain: 0.12 })); tone(98, t, 1.3, { type: "sine", gain: 0.16, to: 196 }); },
-    bigWin() { if (!ensure()) return; if (bigWinBuf) { playBuf(bigWinBuf, 0.55); return; } const t = now(); [523.25, 659.25, 783.99, 1046.5, 1318.5, 1568].forEach((f, i) => tone(f, t + i * 0.09, 0.42, { type: "triangle", gain: 0.15 })); },
+    orbZap(i) { if (!ensure()) return; if (orbZapBuf) { playBuf(orbZapBuf, 0.25, 1 + Math.min(i || 0, 6) * 0.05); return; } const t = now(); const base = 520 + (i || 0) * 80; tone(base, t, 0.18, { type: "sawtooth", gain: 0.10, to: base * 2 }); tone(base * 1.5, t + 0.02, 0.16, { type: "triangle", gain: 0.06, to: base * 3 }); noise(t, 0.12, { gain: 0.05, freq: 3200, type: "highpass" }); },
+    fsTrigger() { if (!ensure()) return; if (fsTrigBuf) { playBuf(fsTrigBuf, 0.55); return; } const t = now(); [392, 523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, t + i * 0.13, 0.55, { type: "sawtooth", gain: 0.12 })); tone(98, t, 1.3, { type: "sine", gain: 0.16, to: 196 }); },
+    bigWin() { if (!ensure()) return; if (bigWinBuf) { playBuf(bigWinBuf, 0.72); return; } const t = now(); [523.25, 659.25, 783.99, 1046.5, 1318.5, 1568].forEach((f, i) => tone(f, t + i * 0.09, 0.42, { type: "triangle", gain: 0.15 })); },
   };
 })();
 

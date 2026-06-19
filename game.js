@@ -1005,6 +1005,31 @@ function buildPaytable() {
 /* ----------------------------------------------------------------------
    Controles
    ---------------------------------------------------------------------- */
+// Persistance des réglages (PAS le solde) : mise, vitesse, sons.
+const SETTINGS_KEY = "got_settings";
+function hasStorage() {
+  try { return typeof localStorage !== "undefined" && localStorage; } catch (e) { return false; }
+}
+function saveSettings() {
+  if (!hasStorage()) return;
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+      bet: state.betIndex, speed: state.speedIndex,
+      sfx: Snd.isSfxOn(), music: Snd.isMusicOn(),
+    }));
+  } catch (e) { /* quota / mode privé : on ignore */ }
+}
+function loadSettings() {
+  if (!hasStorage()) return;
+  let s;
+  try { s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}"); } catch (e) { return; }
+  if (!s || typeof s !== "object") return;
+  if (Number.isInteger(s.bet) && s.bet >= 0 && s.bet < BETS.length) state.betIndex = s.bet;
+  if (Number.isInteger(s.speed) && s.speed >= 0 && s.speed < SPEEDS.length) state.speedIndex = s.speed;
+  if (s.sfx === false) Snd.setSfx(false);     // par défaut activés
+  if (s.music === false) Snd.setMusic(false);
+}
+
 function updateBet() {
   betValEl.textContent = fmt(spinCost());
   buyCostEl.textContent = fmt(buyCost());
@@ -1018,12 +1043,12 @@ function updateSpeed() {
 $("betUp").addEventListener("click", () => {
   Snd.click();
   if (state.busy) return;
-  state.betIndex = Math.min(BETS.length - 1, state.betIndex + 1); updateBet();
+  state.betIndex = Math.min(BETS.length - 1, state.betIndex + 1); updateBet(); saveSettings();
 });
 $("betDown").addEventListener("click", () => {
   Snd.click();
   if (state.busy) return;
-  state.betIndex = Math.max(0, state.betIndex - 1); updateBet();
+  state.betIndex = Math.max(0, state.betIndex - 1); updateBet(); saveSettings();
 });
 anteBtn.addEventListener("click", () => {
   Snd.click();
@@ -1063,22 +1088,22 @@ allToggle.addEventListener("click", (e) => {
   e.stopPropagation();
   kickAudio();
   const target = !(Snd.isSfxOn() || Snd.isMusicOn()); // si tout coupé -> tout activer
-  Snd.setAll(target); if (target) Snd.click(); updateSndMenu();
+  Snd.setAll(target); if (target) Snd.click(); updateSndMenu(); saveSettings();
 });
 sfxToggle.addEventListener("click", (e) => {
   e.stopPropagation();
-  Snd.setSfx(!Snd.isSfxOn()); Snd.click(); updateSndMenu();
+  Snd.setSfx(!Snd.isSfxOn()); Snd.click(); updateSndMenu(); saveSettings();
 });
 musToggle.addEventListener("click", (e) => {
   e.stopPropagation();
   kickAudio();
-  Snd.setMusic(!Snd.isMusicOn()); Snd.click(); updateSndMenu();
+  Snd.setMusic(!Snd.isMusicOn()); Snd.click(); updateSndMenu(); saveSettings();
 });
 document.addEventListener("click", () => { sndMenu.classList.remove("show"); });
 speedBtn.addEventListener("click", () => {
   Snd.click();
   state.speedIndex = (state.speedIndex + 1) % SPEEDS.length;  // modifiable même en free spins
-  updateSpeed();
+  updateSpeed(); saveSettings();
 });
 autoBtn.addEventListener("click", (e) => {
   e.stopPropagation();
@@ -1120,7 +1145,8 @@ if (fsOrb) fsOrb.src = symSrc("SCATTER");
 // Braises dorées du décor
 const emberLayer = $("emberLayer");
 if (emberLayer) {
-  for (let i = 0; i < 16; i++) {
+  const emberCount = (typeof window !== "undefined" && window.innerWidth && window.innerWidth < 560) ? 7 : 16;
+  for (let i = 0; i < emberCount; i++) {
     const e = document.createElement("div");
     e.className = "ember";
     const size = 2 + Math.random() * 2.6;
@@ -1135,6 +1161,7 @@ if (emberLayer) {
 
 dropIn(Array.from({ length: CFG.CELLS }, newCell));
 buildPaytable();
+loadSettings();          // réglages sauvegardés (mise, vitesse, sons) — pas le solde
 updateBet();
 updateSpeed();
 updateSndMenu();

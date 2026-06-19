@@ -719,7 +719,7 @@ async function showBanner(unitWin) {
   bwAmount.textContent = fmt(0);
   winBanner.classList.add("show");
   document.body.classList.add("bigwin-active");   // masque HUD/contrôles pendant la célébration (mobile)
-  bwVideo.loop = true;                            // boucle parfaite : la célébration continue
+  bwVideo.loop = false;                           // joue une seule fois puis se fige sur la dernière image
   try { bwVideo.currentTime = 0; const p = bwVideo.play(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* ignore */ }
 
   // tap : pendant le décompte => accélère ; une fois le décompte fini => ferme

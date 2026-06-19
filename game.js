@@ -967,6 +967,8 @@ function setBusy(b) {
 function flashInsufficient() {
   balanceEl.style.color = "#ff5b5b";
   setTimeout(() => (balanceEl.style.color = ""), 600);
+  const m = $("insufficientModal");
+  if (m) m.classList.add("show");
 }
 
 /* ----------------------------------------------------------------------
@@ -1129,6 +1131,9 @@ buyBtn.addEventListener("click", () => {
 buyCancel.addEventListener("click", () => { Snd.click(); buyConfirm.classList.remove("show"); });
 buyConfirmBtn.addEventListener("click", () => { Snd.click(); buyConfirm.classList.remove("show"); buyBonus(); });
 buyConfirm.addEventListener("click", (e) => { if (e.target === buyConfirm) buyConfirm.classList.remove("show"); });
+const insufficientModal = $("insufficientModal");
+$("insufficientOk").addEventListener("click", () => { Snd.click(); insufficientModal.classList.remove("show"); });
+insufficientModal.addEventListener("click", (e) => { if (e.target === insufficientModal) insufficientModal.classList.remove("show"); });
 function updateSndMenu() {
   const sfx = Snd.isSfxOn(), mus = Snd.isMusicOn();
   sfxToggle.classList.toggle("on", sfx);

@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>GATES OF TOM — Mad Olympvs</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,6 +29,7 @@
     background-attachment:fixed;
     display:flex; flex-direction:column; align-items:center; min-height:100%;
     -webkit-font-smoothing:antialiased; user-select:none; overflow-x:hidden;
+    touch-action:manipulation; -webkit-tap-highlight-color:transparent;
   }
   /* grain + vignette */
   .fx-grain,.fx-vig{position:fixed; inset:0; pointer-events:none; z-index:60;}
@@ -482,14 +483,19 @@
     .stage{border-radius:10px;}
     .stat .val{font-size:18px;}
     .controls{gap:8px; padding:12px 8px 8px;}
-    .spin{width:92px; height:54px;}
-    .spin::after{font-size:13px;}
-    .ante,.buy{height:44px; padding:0 10px; font-size:11px;}
-    .betbox{padding:4px 6px;}
-    button{width:34px; height:34px; font-size:18px;}
-    .betval{min-width:48px; font-size:14px;}
+    .spin{width:104px; height:60px;}
+    .spin::after{font-size:14px;}
+    .ante,.buy,.info{height:46px;}
+    .ante,.buy{padding:0 12px; font-size:11px;}
+    .betbox{padding:4px 8px;}
+    button{width:46px; height:46px; font-size:19px;}   /* cibles tactiles ≥44 px */
+    .sndbtn,.speedbtn{min-width:46px;}
+    .betval{min-width:52px; font-size:15px;}
     .bw-amount{font-size:clamp(30px,11vw,56px);}
     .footer-note{font-size:9px;}
+    /* perf : on retire les effets plein écran coûteux (grain + blur des nuages) */
+    .fx-grain{display:none;}
+    .scene .cloud{display:none;}
   }
   @media (max-width:380px){
     .controls{gap:6px;}

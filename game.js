@@ -857,7 +857,7 @@ async function runFreeSpins(bought = false) {
       await countUpEl($("fsWin"), fsBefore * bet(), to, 450);
       await sleep(180);
     }
-    if (retrig) await showStageToast("RETRIGGER", "+" + CFG.FS_RETRIG + " FREE SPINS", 1400);
+    if (retrig) { Snd.fsTrigger(); await showStageToast("RETRIGGER", "+" + CFG.FS_RETRIG + " FREE SPINS", 1400); }
     if (fsWin >= CFG.MAX_WIN) break;
   }
 

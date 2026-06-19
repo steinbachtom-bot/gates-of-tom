@@ -53,7 +53,8 @@ for vid_rel in ("assets/decor/bigwin.mp4", "assets/decor/bigwin_portrait.mp4"):
 for path in ["assets/audio/click.mp3", "assets/audio/whoosh_spin.mp3",
              "assets/audio/hit.mp3", "assets/audio/land.mp3",
              "assets/audio/scatter.wav", "assets/audio/fs_trigger.wav",
-             "assets/audio/orbzap.wav", "assets/audio/music.mp3",
+             "assets/audio/orbzap.wav", "assets/audio/bigwin.wav",
+             "assets/audio/music.mp3",
              "assets/audio/music_fs.mp3", "assets/audio/bigwin_music.mp3"]:
     full = os.path.join(ROOT, path)
     if os.path.exists(full):

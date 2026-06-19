@@ -10,7 +10,7 @@ const Snd = (() => {
   const AC = (typeof window !== "undefined") && (window.AudioContext || window.webkitAudioContext);
   let ctx = null, master = null, sfxG = null, musicG = null, fileMusicG = null;
   let sfxMuted = false, musicMuted = false, musicOn = false, musicTimer = null, droneNodes = [];
-  let clickBuf = null, whooshBuf = null, hitBuf = null, landBuf = null, scatterBuf = null, fsTrigBuf = null, orbZapBuf = null, musicBuf = null, fsMusicBuf = null, bigMusicBuf = null;
+  let clickBuf = null, whooshBuf = null, hitBuf = null, landBuf = null, scatterBuf = null, fsTrigBuf = null, orbZapBuf = null, bigWinBuf = null, musicBuf = null, fsMusicBuf = null, bigMusicBuf = null;
   let musicTrack = "base", activeMusic = [];
   const MUSIC_VOL = 0.5, XF = 1.8;   // volume musique, durée du crossfade (s)
 
@@ -27,6 +27,7 @@ const Snd = (() => {
     if (!scatterBuf) loadBuf(window.SCATTER_URL, (b) => { scatterBuf = b; });
     if (!fsTrigBuf) loadBuf(window.FS_TRIGGER_URL, (b) => { fsTrigBuf = b; });
     if (!orbZapBuf) loadBuf(window.ORBZAP_URL, (b) => { orbZapBuf = b; });
+    if (!bigWinBuf) loadBuf(window.BIGWIN_STINGER_URL, (b) => { bigWinBuf = b; });
   }
   function trackUrl(track) {
     if (typeof window === "undefined") return null;
@@ -219,7 +220,7 @@ const Snd = (() => {
     anticip() { if (!ensure()) return; const t = now(); tone(220, t, 1.1, { type: "sawtooth", gain: 0.12, to: 660 }); tone(110, t, 1.1, { type: "sine", gain: 0.10, to: 220 }); noise(t, 1.1, { gain: 0.04, freq: 900, type: "bandpass", q: 3 }); },
     orbZap(i) { if (!ensure()) return; if (orbZapBuf) { playBuf(orbZapBuf, 0.5, 1 + Math.min(i || 0, 6) * 0.05); return; } const t = now(); const base = 520 + (i || 0) * 80; tone(base, t, 0.18, { type: "sawtooth", gain: 0.10, to: base * 2 }); tone(base * 1.5, t + 0.02, 0.16, { type: "triangle", gain: 0.06, to: base * 3 }); noise(t, 0.12, { gain: 0.05, freq: 3200, type: "highpass" }); },
     fsTrigger() { if (!ensure()) return; if (fsTrigBuf) { playBuf(fsTrigBuf, 0.6); return; } const t = now(); [392, 523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, t + i * 0.13, 0.55, { type: "sawtooth", gain: 0.12 })); tone(98, t, 1.3, { type: "sine", gain: 0.16, to: 196 }); },
-    bigWin() { if (!ensure()) return; const t = now(); [523.25, 659.25, 783.99, 1046.5, 1318.5, 1568].forEach((f, i) => tone(f, t + i * 0.09, 0.42, { type: "triangle", gain: 0.15 })); },
+    bigWin() { if (!ensure()) return; if (bigWinBuf) { playBuf(bigWinBuf, 0.55); return; } const t = now(); [523.25, 659.25, 783.99, 1046.5, 1318.5, 1568].forEach((f, i) => tone(f, t + i * 0.09, 0.42, { type: "triangle", gain: 0.15 })); },
   };
 })();
 

@@ -242,6 +242,11 @@ function symSrc(key) {
   if (window.SYM_DATA && window.SYM_DATA[f]) return window.SYM_DATA[f];
   return "assets/symbols/" + f;
 }
+// Image de l'orbe multiplicateur (data-URI embarqué sinon fichier).
+function orbSrc() {
+  if (window.SYM_DATA && window.SYM_DATA["orb_mult.png"]) return window.SYM_DATA["orb_mult.png"];
+  return "assets/symbols/orb_mult.png";
+}
 // Taille de l'orbe indexee sur la valeur (signature DA), bornee pour tenir dans la cellule.
 function multScale(v) {
   const s = 0.78 + (Math.log(v) / Math.log(500)) * 0.42; // ~0.78 (x2) -> ~1.2 (x500)
@@ -346,7 +351,8 @@ function hasLayout() {
 function symbolInner(cell) {
   if (cell.t === "MULT") {
     return `<div class="mult-orb" style="--ms:${multScale(cell.v)}">` +
-           `<div class="orb-core"><span class="v">x${cell.v}</span></div></div>`;
+           `<img class="orb-img" src="${orbSrc()}" alt="">` +
+           `<span class="v">x${cell.v}</span></div>`;
   }
   const key = cell.t === "SCATTER" ? "SCATTER" : cell.t;
   return `<img class="sym-img" src="${symSrc(key)}" alt="">`;
@@ -1007,7 +1013,7 @@ function buildPaytable() {
     `</div></div>`;
   rows +=
     `<div class="pt-row">` +
-    `<div class="pt-thumb"><div class="pt-mini-orb">×</div></div>` +
+    `<div class="pt-thumb"><img src="${orbSrc()}" alt=""></div>` +
     `<div class="pt-name">Orbe multiplicateur</div>` +
     `<div class="pt-pays"><span>×2 → ×500 · s'additionnent</span></div></div>`;
 

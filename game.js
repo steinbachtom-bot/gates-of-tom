@@ -366,7 +366,7 @@ function makeTile(cell) {
 function placeAt(el, c, r) { el.style.gridColumn = c + 1; el.style.gridRow = r + 1; }
 
 /* Descente complete : toutes les tuiles tombent du haut, en vague par colonne. */
-function dropIn(cells, animate = true) {
+async function dropIn(cells, animate = true, allowAnticip = true) {
   gridEl.innerHTML = "";
   tileAt = new Array(CFG.CELLS).fill(null);
   // Remplissage statique (animate=false) pour le tout premier rendu : évite que
@@ -382,17 +382,64 @@ function dropIn(cells, animate = true) {
       if (H) { t.style.transition = "none"; t.style.transform = `translateY(${-(H * 1.28)}px)`; }
     }
   }
-  if (H) {
-    void gridEl.offsetHeight; // reflow
+  if (!H) return;                          // statique : rien à animer
+  void gridEl.offsetHeight;                // reflow
+
+  // Lâche une colonne (transition CSS), remplie du bas vers le haut.
+  const dropCol = (c, slow, baseDelay) => {
+    for (let r = 0; r < CFG.ROWS; r++) {
+      const t = tileAt[idx(c, r)];
+      const delay = dur((baseDelay || 0) + (CFG.ROWS - 1 - r) * 22);
+      t.style.transition = `transform ${dur(380 * (slow || 1))}ms ${SLAM_EASE} ${delay}ms`;
+      t.style.transform = "translateY(0)";
+    }
+  };
+  const pulseCol = (c) => {
+    for (let r = 0; r < CFG.ROWS; r++) {
+      if (cells[idx(c, r)].t === "SCATTER" && tileAt[idx(c, r)]) tileAt[idx(c, r)].classList.add("anticip");
+    }
+  };
+
+  // Colonne de déclenchement de l'anticipation : où le 3e scatter apparaît
+  // (de gauche à droite), s'il reste au moins une colonne à révéler après.
+  let trigCol = -1;
+  if (allowAnticip) {
+    let cum = 0;
     for (let c = 0; c < CFG.REELS; c++) {
-      for (let r = 0; r < CFG.ROWS; r++) {
-        const t = tileAt[idx(c, r)];
-        const delay = dur(c * 42 + (CFG.ROWS - 1 - r) * 22); // gauche->droite, remplit par le bas
-        t.style.transition = `transform ${dur(380)}ms ${SLAM_EASE} ${delay}ms`;
-        t.style.transform = "translateY(0)";
-      }
+      for (let r = 0; r < CFG.ROWS; r++) if (cells[idx(c, r)].t === "SCATTER") cum++;
+      if (cum >= 3 && c < CFG.REELS - 1) { trigCol = c; break; }
     }
   }
+
+  if (trigCol < 0) {
+    // Cas normal : toutes les colonnes tombent (gauche -> droite, léger décalage).
+    for (let c = 0; c < CFG.REELS; c++) dropCol(c, 1, c * 42);
+    await sleep(dur(660));
+    Snd.land();
+    return;
+  }
+
+  // --- ANTICIPATION DE ROULEAUX (pendant la chute) ---
+  // 1) On tombe les colonnes 0..trigCol ; les suivantes restent cachées au-dessus (cases vides).
+  for (let c = 0; c <= trigCol; c++) dropCol(c, 1, c * 42);
+  await sleep(dur(380 + trigCol * 42 + (CFG.ROWS - 1) * 22 + 60));
+  Snd.land();
+  // 2) Pulsation des scatters affichés + on assombrit le reste, pause de tension.
+  gridEl.classList.add("anticip");
+  for (let c = 0; c <= trigCol; c++) pulseCol(c);
+  await sleep(dur(850));
+  gridEl.classList.remove("anticip");      // on ré-éclaire pour bien voir les rouleaux révélés
+  // 3) Révélation des colonnes restantes une par une, plus lentement (les scatters continuent de pulser).
+  for (let c = trigCol + 1; c < CFG.REELS; c++) {
+    dropCol(c, 1.35, 0);
+    await sleep(dur(600));
+    Snd.land();
+    pulseCol(c);                           // pulse aussi un éventuel 4e scatter qui tombe
+    if (c < CFG.REELS - 1) await sleep(dur(380));
+  }
+  await sleep(dur(300));
+  // 4) Fin de l'anticipation.
+  gridEl.querySelectorAll(".tile.anticip").forEach((t) => t.classList.remove("anticip"));
 }
 
 /* Disparition des gagnants : lueur + fumee + dissolution, puis retrait. */
@@ -485,19 +532,8 @@ function scatterIndices(cells) {
   return out;
 }
 
-/* Anticipation : assombrit la grille et fait palpiter les scatters quand
-   il y en a 3 à l'écran (tension « il en manque un » pour les free spins). */
-async function playAnticipation(cells) {
-  if (!hasLayout()) return;
-  const idxs = scatterIndices(cells);
-  gridEl.classList.add("anticip");
-  idxs.forEach((i) => { const t = tileAt[i]; if (t) t.classList.add("anticip"); });
-  Snd.anticip();
-  await sleep(dur(1100));
-  gridEl.classList.remove("anticip");
-  idxs.forEach((i) => { const t = tileAt[i]; if (t) t.classList.remove("anticip"); });
-  await sleep(dur(120));
-}
+/* L'anticipation de rouleaux est désormais gérée pendant la descente (voir dropIn) :
+   pulsation des scatters affichés + pause des colonnes pas encore tombées. */
 
 /* ----------------------------------------------------------------------
    Effets de gain : count-up, étincelles, popups, révélation des orbes
@@ -642,24 +678,16 @@ async function creditWin(unitWin) {
 async function animateRound(round, onPartial) {
   const frames = round.frames;
   let unitWin = 0;
-  let anticipated = false;
-  // Anticipation dès que 3 scatters (ou plus) sont visibles à un moment du round.
-  const maybeAnticip = async (cells) => {
-    if (anticipated) return;
-    if (scatterIndices(cells).length >= 3) { anticipated = true; await playAnticipation(cells); }
-  };
   Snd.spin();
-  dropIn(frames[0].cells);              // descente initiale (toutes les colonnes)
+  // Descente initiale : gère l'anticipation de rouleaux (pulse scatters + pause des
+  // colonnes pas encore tombées quand 3 scatters sont à l'écran) et le son d'atterrissage.
+  await dropIn(frames[0].cells);
   if (hasLayout()) {
-    // le dernier symbole (col. 5, rangée haute) se pose vers delay(298)+chute(380)
-    await sleep(dur(660));
-    Snd.land();                          // impact pile à l'atterrissage du dernier
     if (!frames[0].winCells.length) shakeGrid(); // secousse seulement s'il n'y a pas de hit
     await sleep(dur(120));
   } else {
     Snd.land();
   }
-  await maybeAnticip(frames[0].cells);   // scatters dès la descente initiale
   let i = 0;
   while (frames[i] && frames[i].winCells.length) {
     unitWin += frames[i].stepWin;
@@ -667,7 +695,7 @@ async function animateRound(round, onPartial) {
     popCascadeWin(frames[i].stepWin, i);   // « +X » flottant + étincelles par cascade
     if (onPartial) { onPartial(unitWin); pulseGain(); }
     await clearWinners(frames[i].winCells);
-    if (frames[i + 1]) { await tumbleTo(frames[i + 1].cells); await maybeAnticip(frames[i + 1].cells); }
+    if (frames[i + 1]) await tumbleTo(frames[i + 1].cells);
     i++;
   }
   return { baseWin: unitWin, multSum: round.multSum, scatters: round.scatters };
@@ -901,8 +929,7 @@ function makeTriggerGrid() {
 async function animateTriggerSpin() {
   const cells = makeTriggerGrid();
   Snd.spin();
-  dropIn(cells);
-  await sleep(hasLayout() ? dur(760) : 0);
+  await dropIn(cells, true, false);    // achat : pas d'anticipation (révélation directe)
   Snd.scatter();
   if (hasLayout()) {
     for (let i = 0; i < CFG.CELLS; i++) {

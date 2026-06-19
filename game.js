@@ -10,7 +10,7 @@ const Snd = (() => {
   const AC = (typeof window !== "undefined") && (window.AudioContext || window.webkitAudioContext);
   let ctx = null, master = null, sfxG = null, musicG = null, fileMusicG = null;
   let sfxMuted = false, musicMuted = false, musicOn = false, musicTimer = null, droneNodes = [];
-  let clickBuf = null, whooshBuf = null, hitBuf = null, landBuf = null, musicBuf = null, fsMusicBuf = null, bigMusicBuf = null;
+  let clickBuf = null, whooshBuf = null, hitBuf = null, landBuf = null, scatterBuf = null, musicBuf = null, fsMusicBuf = null, bigMusicBuf = null;
   let musicTrack = "base", activeMusic = [];
   const MUSIC_VOL = 0.5, XF = 1.8;   // volume musique, durée du crossfade (s)
 
@@ -24,6 +24,7 @@ const Snd = (() => {
     if (!whooshBuf) loadBuf(window.WHOOSH_URL, (b) => { whooshBuf = b; });
     if (!hitBuf) loadBuf(window.HIT_URL, (b) => { hitBuf = b; });
     if (!landBuf) loadBuf(window.LAND_URL, (b) => { landBuf = b; });
+    if (!scatterBuf) loadBuf(window.SCATTER_URL, (b) => { scatterBuf = b; });
   }
   function trackUrl(track) {
     if (typeof window === "undefined") return null;
@@ -211,7 +212,7 @@ const Snd = (() => {
     pop() { if (!ensure()) return; const t = now(); noise(t, 0.16, { gain: 0.13, freq: 1700, type: "bandpass", q: 0.8 }); },
     orb() { if (!ensure()) return; const t = now(); tone(880, t, 0.2, { type: "triangle", gain: 0.11, to: 1320 }); tone(1320, t + 0.05, 0.2, { type: "sine", gain: 0.07, to: 1760 }); },
     win(mult) { if (!ensure()) return; if (hitBuf) { playBuf(hitBuf, 0.45); return; } const t = now(); const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5]; const n = Math.max(1, Math.min(notes.length, 1 + Math.floor((mult || 0) / 2))); for (let i = 0; i < n; i++) tone(notes[i], t + i * 0.07, 0.2, { type: "triangle", gain: 0.13 }); },
-    scatter() { if (!ensure()) return; const t = now(); tone(660, t, 0.5, { type: "sine", gain: 0.15, to: 990 }); noise(t, 0.5, { gain: 0.05, freq: 700, type: "bandpass", q: 2 }); },
+    scatter() { if (!ensure()) return; if (scatterBuf) { playBuf(scatterBuf, 0.5); return; } const t = now(); tone(660, t, 0.5, { type: "sine", gain: 0.15, to: 990 }); noise(t, 0.5, { gain: 0.05, freq: 700, type: "bandpass", q: 2 }); },
     anticip() { if (!ensure()) return; const t = now(); tone(220, t, 1.1, { type: "sawtooth", gain: 0.12, to: 660 }); tone(110, t, 1.1, { type: "sine", gain: 0.10, to: 220 }); noise(t, 1.1, { gain: 0.04, freq: 900, type: "bandpass", q: 3 }); },
     orbZap(i) { if (!ensure()) return; const t = now(); const base = 520 + (i || 0) * 80; tone(base, t, 0.18, { type: "sawtooth", gain: 0.10, to: base * 2 }); tone(base * 1.5, t + 0.02, 0.16, { type: "triangle", gain: 0.06, to: base * 3 }); noise(t, 0.12, { gain: 0.05, freq: 3200, type: "highpass" }); },
     fsTrigger() { if (!ensure()) return; const t = now(); [392, 523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, t + i * 0.13, 0.55, { type: "sawtooth", gain: 0.12 })); tone(98, t, 1.3, { type: "sine", gain: 0.16, to: 196 }); },

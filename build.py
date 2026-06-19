@@ -49,19 +49,17 @@ for vid_rel in ("assets/decor/bigwin.mp4", "assets/decor/bigwin_portrait.mp4"):
         html = html.replace('"' + vid_rel + '"',
                             '"data:video/mp4;base64,' + b + '"')
 
-# Embarquer les sons (clic, whoosh) en data-URI
-for path, token in [("assets/audio/click.mp3", '"assets/audio/click.mp3"'),
-                    ("assets/audio/whoosh_spin.mp3", '"assets/audio/whoosh_spin.mp3"'),
-                    ("assets/audio/hit.mp3", '"assets/audio/hit.mp3"'),
-                    ("assets/audio/land.mp3", '"assets/audio/land.mp3"'),
-                    ("assets/audio/music.mp3", '"assets/audio/music.mp3"'),
-                    ("assets/audio/music_fs.mp3", '"assets/audio/music_fs.mp3"'),
-                    ("assets/audio/bigwin_music.mp3", '"assets/audio/bigwin_music.mp3"')]:
+# Embarquer les sons en data-URI (MIME selon l'extension : mp3 -> mpeg, wav -> wav)
+for path in ["assets/audio/click.mp3", "assets/audio/whoosh_spin.mp3",
+             "assets/audio/hit.mp3", "assets/audio/land.mp3",
+             "assets/audio/scatter.wav", "assets/audio/music.mp3",
+             "assets/audio/music_fs.mp3", "assets/audio/bigwin_music.mp3"]:
     full = os.path.join(ROOT, path)
     if os.path.exists(full):
         with open(full, "rb") as f:
             b = base64.b64encode(f.read()).decode("ascii")
-        html = html.replace(token, '"data:audio/mpeg;base64,' + b + '"')
+        mime = "audio/wav" if path.endswith(".wav") else "audio/mpeg"
+        html = html.replace('"' + path + '"', '"data:' + mime + ";base64," + b + '"')
 
 out = os.path.join(ROOT, "GATES_OF_TOM.html")
 open(out, "w", encoding="utf-8").write(html)

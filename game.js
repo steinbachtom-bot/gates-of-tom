@@ -605,7 +605,7 @@ async function revealMultipliers(cells) {
     sum += v;
     if (t) {
       t.classList.add("zap");
-      Snd.orbZap(k);
+      // Snd.orbZap(k);   // son des orbes désactivé (à réactiver si besoin) — orbzap.wav conservé
       const r = t.getBoundingClientRect();
       sparkBurst(r.left + r.width / 2, r.top + r.height / 2, 9, "gold");
       await sleep(dur(fast ? 90 : 175));

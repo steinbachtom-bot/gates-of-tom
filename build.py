@@ -29,13 +29,14 @@ html = html.replace('<script src="engine.js"></script>',
 html = html.replace('<script src="game.js"></script>',
                     assets_script + "\n<script>\n" + game + "\n</script>")
 
-# Embarquer le décor (image de fond) en data-URI
-decor = os.path.join(ROOT, "assets/decor/bg_hades_web.jpg")
-if os.path.exists(decor):
-    with open(decor, "rb") as f:
-        b = base64.b64encode(f.read()).decode("ascii")
-    html = html.replace('src="assets/decor/bg_hades_web.jpg"',
-                        'src="data:image/jpeg;base64,' + b + '"')
+# Embarquer les décors (fond large + fond portrait) en data-URI
+for decor_rel in ("assets/decor/bg_hades_web.jpg", "assets/decor/bg_portrait_web.jpg"):
+    decor = os.path.join(ROOT, decor_rel)
+    if os.path.exists(decor):
+        with open(decor, "rb") as f:
+            b = base64.b64encode(f.read()).decode("ascii")
+        html = html.replace('src="' + decor_rel + '"',
+                            'src="data:image/jpeg;base64,' + b + '"')
 
 # Embarquer la vidéo Big Win en data-URI
 bw = os.path.join(ROOT, "assets/decor/bigwin.mp4")

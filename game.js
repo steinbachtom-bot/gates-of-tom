@@ -234,7 +234,7 @@ const SYM_FILE = {
   gem_yellow: "ruby.png",
   gem_green:  "emerald.png",
   gem_blue:   "sapphire.png",
-  SCATTER:    "orb.png",
+  SCATTER:    "scatter_hades.png",
 };
 // Source d'image : data-URI embarque (fichier autonome) sinon fichier dans assets/.
 function symSrc(key) {
@@ -320,7 +320,7 @@ const allToggle = $("allToggle");
 const SYM_NAME = {
   crown: "Roi-lion", hourglass: "Seigneur démon", ring: "Zeus cornu", chalice: "Masque démon",
   gem_red: "Laurier", gem_purple: "Couronne", gem_yellow: "Rubis", gem_green: "Émeraude", gem_blue: "Saphir",
-  SCATTER: "Orbe d'Olympe",
+  SCATTER: "Orbe d'Hadès",
 };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

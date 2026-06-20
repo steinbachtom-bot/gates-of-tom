@@ -38,13 +38,13 @@ for decor_rel in ("assets/decor/bg_hades_web.jpg", "assets/decor/bg_portrait_web
         html = html.replace('src="' + decor_rel + '"',
                             'src="data:image/jpeg;base64,' + b + '"')
 
-# Avant-plan portrait (PNG transparent)
-fg_rel = "assets/decor/bg_portrait_fg.png"
-fg = os.path.join(ROOT, fg_rel)
-if os.path.exists(fg):
-    with open(fg, "rb") as f:
-        b = base64.b64encode(f.read()).decode("ascii")
-    html = html.replace('src="' + fg_rel + '"', 'src="data:image/png;base64,' + b + '"')
+# PNG décor transparents (avant-plan portrait + panneau de gain)
+for png_rel in ("assets/decor/bg_portrait_fg.png", "assets/decor/win_plaque.png"):
+    png = os.path.join(ROOT, png_rel)
+    if os.path.exists(png):
+        with open(png, "rb") as f:
+            b = base64.b64encode(f.read()).decode("ascii")
+        html = html.replace('src="' + png_rel + '"', 'src="data:image/png;base64,' + b + '"')
 
 # Favicons (href= dans le <head>)
 for icon_rel in ("assets/icons/icon-32.png", "assets/icons/icon-180.png"):

@@ -46,6 +46,14 @@ if os.path.exists(fg):
         b = base64.b64encode(f.read()).decode("ascii")
     html = html.replace('src="' + fg_rel + '"', 'src="data:image/png;base64,' + b + '"')
 
+# Favicons (href= dans le <head>)
+for icon_rel in ("assets/icons/icon-32.png", "assets/icons/icon-180.png"):
+    icon = os.path.join(ROOT, icon_rel)
+    if os.path.exists(icon):
+        with open(icon, "rb") as f:
+            b = base64.b64encode(f.read()).decode("ascii")
+        html = html.replace('href="' + icon_rel + '"', 'href="data:image/png;base64,' + b + '"')
+
 # Embarquer les vidéos Big Win (16:9 + portrait) en data-URI.
 # La source est choisie par JS via window.BIGWIN_URL / window.BIGWIN_PORTRAIT_URL :
 # on remplace donc les littéraux de chaîne (pas un attribut src=).

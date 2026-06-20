@@ -268,7 +268,7 @@ const BETS = [
 ];
 
 const state = {
-  balance: 1000,
+  balance: 10000,
   betIndex: 8,   // 1,00 par défaut
   busy: false,
   ante: false,

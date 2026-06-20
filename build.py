@@ -38,6 +38,14 @@ for decor_rel in ("assets/decor/bg_hades_web.jpg", "assets/decor/bg_portrait_web
         html = html.replace('src="' + decor_rel + '"',
                             'src="data:image/jpeg;base64,' + b + '"')
 
+# Avant-plan portrait (PNG transparent)
+fg_rel = "assets/decor/bg_portrait_fg.png"
+fg = os.path.join(ROOT, fg_rel)
+if os.path.exists(fg):
+    with open(fg, "rb") as f:
+        b = base64.b64encode(f.read()).decode("ascii")
+    html = html.replace('src="' + fg_rel + '"', 'src="data:image/png;base64,' + b + '"')
+
 # Embarquer les vidéos Big Win (16:9 + portrait) en data-URI.
 # La source est choisie par JS via window.BIGWIN_URL / window.BIGWIN_PORTRAIT_URL :
 # on remplace donc les littéraux de chaîne (pas un attribut src=).

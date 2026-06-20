@@ -1,4 +1,4 @@
-# GATES OF TOM — Mad Olympus 🏛️⚡
+# CURSE OF HADES — Mad Olympus 🏛️⚡
 
 Slot « pay-anywhere » type Gates of Olympus, thème *Mad Olympus* (Olympe doré et corrompu,
 ambiance dérangée à la Nolimit). **Jetons virtuels uniquement** — aucun argent réel.

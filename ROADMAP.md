@@ -1,4 +1,4 @@
-# GATES OF TOM — Feuille de route
+# CURSE OF HADES — Feuille de route
 
 État actuel : ✅ moteur math calibré (RTP ≈ 96 %) + ✅ client jouable (jetons virtuels).
 Légende : 🤖 = je peux le faire ici · 🧑 = à faire par toi / un prestataire externe.
@@ -89,7 +89,7 @@ Objectif : brancher le jeu chez les casinos et le vendre.
 ## Phase 5 — Cadre légal & société (transverse, à lancer tôt)
 
 20. **Structure juridique** 🧑 — société, là où la licence B2B est possible.
-21. **Marque & PI** 🧑 — protéger « Gates of Tom » et les assets originaux.
+21. **Marque & PI** 🧑 — protéger « Curse of Hades » et les assets originaux.
 22. **Contrats de licence** 🧑 — avec les opérateurs / agrégateurs (avocat spécialisé jeux).
 
 ---

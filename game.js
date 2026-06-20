@@ -275,6 +275,9 @@ const state = {
   speedIndex: 0, // NORMAL par défaut
   auto: 0,       // tours auto restants (-1 = illimité, 0 = arrêté)
   autoActive: false,
+  autoStopBigWin: false,   // autoplay : stop si gros gain
+  autoStopFs: false,       // autoplay : stop si free spins
+  lastBigWin: false, lastFs: false,   // drapeaux du dernier spin (pour l'autoplay)
 };
 const BUY_COST_MULT = 100; // achat des free spins = 100x la mise
 
@@ -748,6 +751,7 @@ async function showStageToast(tag, big, ms) {
 }
 
 async function showBanner(unitWin) {
+  state.lastBigWin = true;                 // pour l'autoplay (stop sur big win)
   const chips = round2(unitWin * bet());
   bwTag.textContent = bigWinTier(unitWin);
   Snd.bigWin();
@@ -882,6 +886,7 @@ async function spin() {
   if (state.balance < round2(spinCost())) { flashInsufficient(); return; }
   setBusy(true);
   spinBtn.classList.add("spinning");
+  state.lastBigWin = false; state.lastFs = false;   // drapeaux pour l'autoplay
 
   setAnte(state.ante);                // synchronise le moteur
   state.balance = round2(state.balance - round2(spinCost()));
@@ -914,6 +919,7 @@ async function spin() {
 
   // free spins ?
   if (sc >= CFG.TRIGGER) {
+    state.lastFs = true;
     const fsUnit = await runFreeSpins();
     await creditWin(fsUnit);
   }
@@ -1004,6 +1010,8 @@ async function runAuto() {
     updateAutoUI();
     await spin();
     if (!state.autoActive) break;            // arrêt manuel pendant le spin
+    if (state.autoStopFs && state.lastFs) break;          // stop sur free spins
+    if (state.autoStopBigWin && state.lastBigWin) break;  // stop sur big win
     await sleep(dur(260));                    // petite pause entre deux tours
   }
   stopAuto();
@@ -1083,6 +1091,7 @@ function saveSettings() {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify({
       bet: state.betIndex, speed: state.speedIndex,
       sfx: Snd.isSfxOn(), music: Snd.isMusicOn(),
+      autoStopBig: state.autoStopBigWin, autoStopFs: state.autoStopFs,
     }));
   } catch (e) { /* quota / mode privé : on ignore */ }
 }
@@ -1095,6 +1104,8 @@ function loadSettings() {
   if (Number.isInteger(s.speed) && s.speed >= 0 && s.speed < SPEEDS.length) state.speedIndex = s.speed;
   if (s.sfx === false) Snd.setSfx(false);     // par défaut activés
   if (s.music === false) Snd.setMusic(false);
+  if (s.autoStopBig === true) state.autoStopBigWin = true;
+  if (s.autoStopFs === true) state.autoStopFs = true;
 }
 
 function updateBet() {
@@ -1189,6 +1200,20 @@ autoMenu.querySelectorAll(".auto-opt").forEach((opt) => {
     startAuto(parseInt(opt.dataset.n, 10));
   });
 });
+// Options autoplay : stop sur big win / free spins (toggles)
+const autoStopBigBtn = $("autoStopBig"), autoStopFsBtn = $("autoStopFs");
+function updateAutoStops() {
+  if (autoStopBigBtn) autoStopBigBtn.classList.toggle("on", state.autoStopBigWin);
+  if (autoStopFsBtn) autoStopFsBtn.classList.toggle("on", state.autoStopFs);
+}
+if (autoStopBigBtn) autoStopBigBtn.addEventListener("click", (e) => {
+  e.stopPropagation(); Snd.click();
+  state.autoStopBigWin = !state.autoStopBigWin; updateAutoStops(); saveSettings();
+});
+if (autoStopFsBtn) autoStopFsBtn.addEventListener("click", (e) => {
+  e.stopPropagation(); Snd.click();
+  state.autoStopFs = !state.autoStopFs; updateAutoStops(); saveSettings();
+});
 document.addEventListener("click", () => { autoMenu.classList.remove("show"); });
 payBtn.addEventListener("click", () => { Snd.click(); ptOverlay.classList.add("show"); });
 ptClose.addEventListener("click", () => { Snd.click(); ptOverlay.classList.remove("show"); });
@@ -1236,6 +1261,7 @@ updateBet();
 updateSpeed();
 updateSndMenu();
 updateAutoUI();
+updateAutoStops();
 balanceEl.textContent = fmt(state.balance);
 
 /* ----------------------------------------------------------------------

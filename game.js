@@ -762,7 +762,11 @@ async function showBanner(unitWin) {
   bwAmount.textContent = fmt(0);
   winBanner.classList.add("show");
   document.body.classList.add("bigwin-active");   // masque HUD/contrôles pendant la célébration (mobile)
-  bwVideo.loop = false;                           // joue une seule fois puis se fige sur la dernière image
+  bwVideo.loop = false;                           // joue une seule fois...
+  // ...puis se fige sur la FRAME 0 (= décor d'origine propre, portail noir vide),
+  // au lieu de rester sur une image en plein milieu de l'animation (effet « bug »).
+  const onEnded = () => { try { bwVideo.pause(); bwVideo.currentTime = 0; } catch (e) { /* ignore */ } };
+  bwVideo.addEventListener("ended", onEnded);
   try { bwVideo.currentTime = 0; const p = bwVideo.play(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* ignore */ }
 
   // tap : pendant le décompte => accélère ; une fois le décompte fini => ferme
@@ -797,6 +801,7 @@ async function showBanner(unitWin) {
   if (bwHint) bwHint.classList.remove("show");
 
   winBanner.removeEventListener("click", onTap);
+  bwVideo.removeEventListener("ended", onEnded);
   winBanner.classList.remove("show");
   document.body.classList.remove("bigwin-active");
   try { bwVideo.pause(); } catch (e) { /* ignore */ }

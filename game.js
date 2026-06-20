@@ -797,24 +797,14 @@ async function showBanner(unitWin) {
   bwAmount.textContent = fmt(chips);
   countDone = true;
 
-  if (mega) {
-    // 100x+ : reste jusqu'au tap (autoplay : referme tout seul après quelques secondes)
-    if (bwHint) bwHint.classList.add("show");
-    await new Promise((res) => {
-      let iv, autoTimer;
-      const finish = () => { clearInterval(iv); clearTimeout(autoTimer); res(); };
-      iv = setInterval(() => { if (dismiss) finish(); }, 80);
-      if (state.autoActive) autoTimer = setTimeout(finish, 6000);
-    });
-  } else {
-    // 20–99x : court palier d'affichage puis fermeture auto (tap pour passer)
-    await new Promise((res) => {
-      let iv, t;
-      const finish = () => { clearInterval(iv); clearTimeout(t); res(); };
-      iv = setInterval(() => { if (dismiss) finish(); }, 80);
-      t = setTimeout(finish, 1100);
-    });
-  }
+  // reste affiché jusqu'au tap du joueur (autoplay : referme tout seul pour ne pas bloquer)
+  if (bwHint) bwHint.classList.add("show");
+  await new Promise((res) => {
+    let iv, autoTimer;
+    const finish = () => { clearInterval(iv); clearTimeout(autoTimer); res(); };
+    iv = setInterval(() => { if (dismiss) finish(); }, 80);
+    if (state.autoActive) autoTimer = setTimeout(finish, mega ? 6000 : 3000);
+  });
   if (bwHint) bwHint.classList.remove("show");
 
   winBanner.removeEventListener("click", onTap);

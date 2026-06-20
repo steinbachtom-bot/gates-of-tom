@@ -754,32 +754,36 @@ async function showBanner(unitWin) {
   state.lastBigWin = true;                 // pour l'autoplay (stop sur big win)
   const chips = round2(unitWin * bet());
   bwTag.textContent = bigWinTier(unitWin);
-  Snd.bigWin();
+  const mega = unitWin >= 100;             // 100x+ : grosse animation + musique ; 20–99x : panneau seul
+  Snd.bigWin();                            // stinger (les deux paliers)
 
   // headless / pas de DOM animable : on ne joue pas l'écran
   if (typeof requestAnimationFrame !== "function" || !hasLayout()) return;
 
-  ensureBigWinSrc();                      // source vidéo selon l'orientation (portrait / 16:9)
-  const prevTrack = Snd.trackName();
-  Snd.setTrack("bigwin");                 // musique dédiée au Big Win
   if (bwHint) bwHint.classList.remove("show");
   bwAmount.textContent = fmt(0);
+  winBanner.classList.toggle("mega", mega);   // .mega -> affiche la vidéo (CSS)
   winBanner.classList.add("show");
   document.body.classList.add("bigwin-active");   // masque HUD/contrôles pendant la célébration (mobile)
-  bwVideo.loop = false;                           // joue une seule fois...
-  // ...puis se fige sur la FRAME 0 (= décor d'origine propre, portail noir vide),
-  // au lieu de rester sur une image en plein milieu de l'animation (effet « bug »).
-  const onEnded = () => { try { bwVideo.pause(); bwVideo.currentTime = 0; } catch (e) { /* ignore */ } };
-  bwVideo.addEventListener("ended", onEnded);
-  try { bwVideo.currentTime = 0; const p = bwVideo.play(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* ignore */ }
+
+  let onEnded = null;
+  const prevTrack = Snd.trackName();
+  if (mega) {
+    ensureBigWinSrc();                    // source vidéo selon l'orientation (portrait / 16:9)
+    Snd.setTrack("bigwin");               // musique dédiée seulement à 100x+
+    bwVideo.loop = false;                 // joue une fois puis se fige sur la frame 0 (décor propre)
+    onEnded = () => { try { bwVideo.pause(); bwVideo.currentTime = 0; } catch (e) { /* ignore */ } };
+    bwVideo.addEventListener("ended", onEnded);
+    try { bwVideo.currentTime = 0; const p = bwVideo.play(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* ignore */ }
+  }
 
   // tap : pendant le décompte => accélère ; une fois le décompte fini => ferme
   let countDone = false, fastFwd = false, dismiss = false;
   const onTap = () => { if (!countDone) fastFwd = true; else dismiss = true; };
   winBanner.addEventListener("click", onTap);
 
-  // compteur qui défile (ease-out)
-  const T = 3000, t0 = performance.now();
+  // compteur qui défile (ease-out) — plus court pour les gains moyens
+  const T = mega ? 3000 : 1400, t0 = performance.now();
   await new Promise((res) => {
     function step(nowT) {
       if (fastFwd) { res(); return; }
@@ -793,24 +797,33 @@ async function showBanner(unitWin) {
   bwAmount.textContent = fmt(chips);
   countDone = true;
 
-  // l'écran RESTE jusqu'à ce que le joueur tape (la vidéo tourne en boucle).
-  // En autoplay, on referme tout seul après quelques secondes pour ne pas bloquer.
-  if (bwHint) bwHint.classList.add("show");
-  await new Promise((res) => {
-    let iv, autoTimer;
-    const finish = () => { clearInterval(iv); clearTimeout(autoTimer); res(); };
-    iv = setInterval(() => { if (dismiss) finish(); }, 80);
-    if (state.autoActive) autoTimer = setTimeout(finish, 6000);
-  });
+  if (mega) {
+    // 100x+ : reste jusqu'au tap (autoplay : referme tout seul après quelques secondes)
+    if (bwHint) bwHint.classList.add("show");
+    await new Promise((res) => {
+      let iv, autoTimer;
+      const finish = () => { clearInterval(iv); clearTimeout(autoTimer); res(); };
+      iv = setInterval(() => { if (dismiss) finish(); }, 80);
+      if (state.autoActive) autoTimer = setTimeout(finish, 6000);
+    });
+  } else {
+    // 20–99x : court palier d'affichage puis fermeture auto (tap pour passer)
+    await new Promise((res) => {
+      let iv, t;
+      const finish = () => { clearInterval(iv); clearTimeout(t); res(); };
+      iv = setInterval(() => { if (dismiss) finish(); }, 80);
+      t = setTimeout(finish, 1100);
+    });
+  }
   if (bwHint) bwHint.classList.remove("show");
 
   winBanner.removeEventListener("click", onTap);
-  bwVideo.removeEventListener("ended", onEnded);
-  winBanner.classList.remove("show");
+  if (onEnded) bwVideo.removeEventListener("ended", onEnded);
+  winBanner.classList.remove("show", "mega");
   document.body.classList.remove("bigwin-active");
   try { bwVideo.pause(); } catch (e) { /* ignore */ }
-  Snd.setTrack(prevTrack);                // retour à la musique précédente
-  await sleep(300);
+  if (mega) Snd.setTrack(prevTrack);      // retour à la musique précédente
+  await sleep(mega ? 300 : 150);
 }
 
 /* ----------------------------------------------------------------------

@@ -226,15 +226,15 @@ const Snd = (() => {
 
 /* Mapping DA « Mad Olympvs » : nos symboles -> assets PNG (du plus fort au plus faible). */
 const SYM_FILE = {
-  crown:      "lionking.png",  // Premium I
-  hourglass:  "demon.png",     // Premium II
-  ring:       "zeus.png",      // Premium III
-  chalice:    "redmask.png",   // Premium IV
-  gem_red:    "laurel.png",
-  gem_purple: "crown2.png",
-  gem_yellow: "ruby.png",
-  gem_green:  "emerald.png",
-  gem_blue:   "sapphire.png",
+  crown:      "premium_lion.png",   // Premium I
+  hourglass:  "premium_demon.png",  // Premium II
+  ring:       "premium_zeus.png",   // Premium III
+  chalice:    "premium_mask.png",   // Premium IV
+  gem_red:    "gem_red.png",
+  gem_purple: "gem_purple.png",
+  gem_yellow: "gem_yellow.png",
+  gem_green:  "gem_green.png",
+  gem_blue:   "gem_blue.png",
   SCATTER:    "scatter_hades.png",
 };
 // Source d'image : data-URI embarque (fichier autonome) sinon fichier dans assets/.
@@ -320,7 +320,7 @@ const allToggle = $("allToggle");
 /* Noms d'affichage (selon l'art applique) */
 const SYM_NAME = {
   crown: "Roi-lion", hourglass: "Seigneur démon", ring: "Zeus cornu", chalice: "Masque démon",
-  gem_red: "Laurier", gem_purple: "Couronne", gem_yellow: "Rubis", gem_green: "Émeraude", gem_blue: "Saphir",
+  gem_red: "Rubis", gem_purple: "Améthyste", gem_yellow: "Topaze", gem_green: "Émeraude", gem_blue: "Saphir",
   SCATTER: "Orbe d'Hadès",
 };
 

@@ -358,9 +358,11 @@ function symbolInner(cell) {
   const key = cell.t === "SCATTER" ? "SCATTER" : cell.t;
   return `<img class="sym-img" src="${symSrc(key)}" alt="">`;
 }
+const PREMIUM_KEYS = { crown: 1, hourglass: 1, ring: 1, chalice: 1 };
 function makeTile(cell) {
   const el = document.createElement("div");
-  el.className = "tile" + (cell.t === "SCATTER" ? " scatter" : "") + (cell.t === "MULT" ? " mult" : "");
+  const tier = PREMIUM_KEYS[cell.t] ? " premium" : (cell.t.indexOf("gem_") === 0 ? " gem" : "");
+  el.className = "tile" + (cell.t === "SCATTER" ? " scatter" : "") + (cell.t === "MULT" ? " mult" : "") + tier;
   el.innerHTML = symbolInner(cell);
   return el;
 }

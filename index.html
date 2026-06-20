@@ -127,7 +127,8 @@
   /* Scène : l'image-décor + la grille posée dans le portail central */
   .stage{position:relative; width:100%; max-width:1040px; margin:8px auto 0; flex-shrink:0;
     aspect-ratio:7552 / 4256; overflow:hidden; border-radius:14px; container-type:size;
-    border:1px solid var(--edge); box-shadow:0 18px 50px rgba(0,0,0,.55);}
+    border:1px solid var(--edge); box-shadow:0 18px 50px rgba(0,0,0,.55);
+    --fl:35.1%; --ft:33.5%; --fw:30.5%; --fh:49.4%;}   /* coords du portail (partagées grille + Big Win) */
   .bg-art{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block;}
   .bg-portrait{display:none;}   /* visible seulement en portrait mobile (plein écran) */
   /* coordonnées du cadre (ajustables) */
@@ -425,17 +426,22 @@
   .bw-video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:-1;
     opacity:0; transition:opacity .4s;}
   .bigwin.show .bw-video{opacity:1;}
-  .bw-content{text-align:center; z-index:1; padding:0 6%;}
-  .bw-tag{font-family:"Cinzel Decorative",serif; font-weight:700; letter-spacing:.08em;
-    font-size:7cqw; line-height:1;
+  /* bloc texte calé EXACTEMENT sur le portail (mêmes coords que la grille) et
+     dimensionné relativement au portail (container query) -> centré + sans débordement */
+  .bw-content{position:absolute; left:var(--fl); top:var(--ft); width:var(--fw); height:var(--fh);
+    z-index:1; container-type:inline-size; text-align:center; padding:2% 3%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;}
+  .bw-tag{font-family:"Cinzel Decorative",serif; font-weight:700; letter-spacing:.04em;
+    font-size:13cqw; line-height:1; white-space:nowrap; max-width:100%;
     background:var(--gold-foil); -webkit-background-clip:text; background-clip:text; color:transparent;
     text-shadow:0 0 40px rgba(201,162,39,.35); filter:drop-shadow(0 2px 0 var(--oxblood-deep));}
-  .bw-amount{font-family:"Cinzel Decorative",serif; font-weight:700; font-size:9.5cqw; line-height:1.05;
-    color:var(--gold-hi); text-shadow:0 0 32px rgba(249,237,180,.6); margin-top:1.5%; font-variant-numeric:tabular-nums;}
+  .bw-amount{font-family:"Cinzel Decorative",serif; font-weight:700; font-size:17cqw; line-height:1.05;
+    white-space:nowrap; max-width:100%;
+    color:var(--gold-hi); text-shadow:0 0 32px rgba(249,237,180,.6); margin-top:3%; font-variant-numeric:tabular-nums;}
   /* indice « appuyez pour continuer » : apparaît après le décompte */
-  .bw-hint{font-family:"Barlow Semi Condensed",sans-serif; text-transform:uppercase; letter-spacing:.26em;
-    font-size:2.6cqw; color:var(--bone-dim); margin-top:3.5%; opacity:0; pointer-events:none;
-    transition:opacity .4s;}
+  .bw-hint{font-family:"Barlow Semi Condensed",sans-serif; text-transform:uppercase; letter-spacing:.2em;
+    font-size:4.5cqw; color:var(--bone-dim); margin-top:5%; opacity:0; pointer-events:none;
+    white-space:nowrap; transition:opacity .4s;}
   .bw-hint.show{opacity:.85; animation:hintPulse 1.8s ease-in-out infinite;}
   @keyframes hintPulse{0%,100%{opacity:.45;}50%{opacity:.9;}}
 
@@ -498,7 +504,6 @@
     button{width:46px; height:46px; font-size:19px;}   /* cibles tactiles ≥44 px */
     .sndbtn,.speedbtn{min-width:46px;}
     .betval{min-width:52px; font-size:15px;}
-    .bw-amount{font-size:clamp(30px,11vw,56px);}
     .footer-note{font-size:9px;}
     /* perf : on retire les effets plein écran coûteux (grain + blur des nuages) */
     .fx-grain{display:none;}
@@ -533,7 +538,7 @@
     .stage{position:fixed; left:50%; top:0; transform:translateX(-50%);
       height:100dvh; width:auto; max-width:none; aspect-ratio:941 / 1672;
       margin:0; border:0; border-radius:0; box-shadow:none; z-index:0;}
-    .grid-wrap{--fl:21.1%; --ft:36%; --fw:57.1%; --fh:27%;}
+    .stage{--fl:21.1%; --ft:36%; --fw:57.1%; --fh:27%;}
 
     /* en-tête et note intégrés à l'image */
     header, .footer-note{display:none;}

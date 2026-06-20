@@ -1,5 +1,5 @@
 /* ======================================================================
-   GATES OF TOM — logique du client (rendu + animations + flux de jeu)
+   CURSE OF HADES — logique du client (rendu + animations + flux de jeu)
    Jetons virtuels uniquement. S'appuie sur le moteur defini dans index.html
    ====================================================================== */
 

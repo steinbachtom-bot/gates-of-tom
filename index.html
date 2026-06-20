@@ -71,6 +71,29 @@
   .loader-pct{font-family:"Barlow Semi Condensed",sans-serif; letter-spacing:.22em; font-size:11px;
     color:var(--bone-faint); font-variant-numeric:tabular-nums;}
 
+  /* ---- Écran d'accueil « appuyez pour commencer » (après le chargement) ---- */
+  .start-overlay{position:fixed; inset:0; z-index:98; display:none; flex-direction:column;
+    align-items:center; justify-content:center; cursor:pointer; -webkit-tap-highlight-color:transparent;
+    background:
+      radial-gradient(120% 90% at 50% -8%, #1a140d 0%, var(--obsidian) 46%),
+      radial-gradient(80% 60% at 50% 100%, rgba(107,31,46,.18), transparent 60%),
+      var(--obsidian);}
+  .start-overlay.show{display:flex; animation:fadeIn .5s ease;}
+  .start-overlay.hide{opacity:0; pointer-events:none; transition:opacity .45s;}
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+  .start-inner{display:flex; flex-direction:column; align-items:center; gap:12px; padding:0 24px; text-align:center;}
+  .start-icon{width:min(190px,42vw); height:auto; border-radius:50%;
+    filter:drop-shadow(0 0 34px rgba(127,227,210,.28)) drop-shadow(0 6px 18px rgba(0,0,0,.6));
+    animation:floaty 3.4s ease-in-out infinite;}
+  .start-logo{margin-top:6px; font-family:"Cinzel Decorative",serif; font-weight:700; letter-spacing:.1em;
+    font-size:clamp(26px,6.5vw,46px); line-height:1;
+    background:var(--gold-foil); -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 0 34px rgba(201,162,39,.2); filter:drop-shadow(0 3px 0 var(--oxblood-deep));}
+  .start-sub{font-family:"Pirata One",cursive; font-size:clamp(14px,3vw,20px); letter-spacing:.18em;
+    color:var(--oxblood-hi); text-transform:uppercase;}
+  .start-cta{margin-top:20px; font-family:"Barlow Semi Condensed",sans-serif; text-transform:uppercase;
+    letter-spacing:.3em; font-size:13px; color:var(--bone-dim); animation:hintPulse 1.7s ease-in-out infinite;}
+
   /* ---- Décor Olympe (CSS/SVG), derrière le jeu ---- */
   .scene{position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none;}
   .scene .glow{position:absolute; left:50%; top:-12%; transform:translateX(-50%);
@@ -594,6 +617,15 @@
       <div class="loader-pct" id="loaderPct">0%</div>
     </div>
   </div>
+
+  <div class="start-overlay" id="startOverlay">
+    <div class="start-inner">
+      <img class="start-icon" src="assets/icons/icon-512.png" alt="">
+      <div class="start-logo">CURSE OF HADES</div>
+      <div class="start-sub">Mad Olympvs</div>
+      <div class="start-cta">Appuyez pour commencer</div>
+    </div>
+  </div>
   <script>
     /* Garde-fou INDÉPENDANT de game.js : le loader ne doit jamais rester bloqué,
        même si engine.js / game.js échoue à charger ou lève une erreur. */
@@ -602,14 +634,22 @@
       function hideLoader() {
         if (hidden) return; hidden = true;
         var l = document.getElementById("loader");
-        if (!l) return;
-        l.classList.add("hide");
-        setTimeout(function () { if (l && l.parentNode) l.parentNode.removeChild(l); }, 700);
+        if (l) { l.classList.add("hide"); setTimeout(function () { if (l && l.parentNode) l.parentNode.removeChild(l); }, 700); }
+        var s = document.getElementById("startOverlay");   // une fois chargé -> écran « appuyez pour commencer »
+        if (s) s.classList.add("show");
       }
       window.__hideLoader = hideLoader;                 // game.js peut l'appeler quand le préchargement est fini
       window.addEventListener("load", function () { setTimeout(hideLoader, 1500); });
       setTimeout(hideLoader, 7000);                     // filet absolu
       window.addEventListener("error", function () { setTimeout(hideLoader, 1500); }, true);
+
+      // Démarrage : 1er appui sur l'écran d'accueil -> on le retire (indépendant de game.js).
+      // L'audio démarre via le même geste (kickAudio dans game.js sur pointerdown).
+      var startOv = document.getElementById("startOverlay");
+      if (startOv) startOv.addEventListener("pointerdown", function () {
+        startOv.classList.add("hide");
+        setTimeout(function () { if (startOv && startOv.parentNode) startOv.parentNode.removeChild(startOv); }, 500);
+      }, { once: true });
     })();
   </script>
   <div class="ember-layer" id="emberLayer"></div>

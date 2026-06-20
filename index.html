@@ -531,7 +531,7 @@
   /* ===== PORTRAIT MOBILE : image plein écran, UI posée sur les bandes sombres ===== */
   @media (orientation:portrait) and (max-width:760px){
     .bg-wide{display:none;}
-    .bg-portrait{display:block;}
+    .bg-portrait{display:block; transform:scale(1.16);}   /* léger zoom : agrandit le portail autour de la grille (évite le débordement sur persos/piliers) */
     body{justify-content:flex-start; overflow:hidden;}
 
     /* la scène occupe tout l'écran (calée en hauteur) ; la grille se pose sur le portail */

@@ -278,6 +278,7 @@ const state = {
   autoStopBigWin: false,   // autoplay : stop si gros gain
   autoStopFs: false,       // autoplay : stop si free spins
   lastBigWin: false, lastFs: false,   // drapeaux du dernier spin (pour l'autoplay)
+  inFs: false,             // true pendant les free spins (anticip dès 2 scatters : retrigger à 3)
 };
 const BUY_COST_MULT = 100; // achat des free spins = 100x la mise
 
@@ -406,14 +407,16 @@ async function dropIn(cells, animate = true, allowAnticip = true) {
     }
   };
 
-  // Colonne de déclenchement de l'anticipation : où le 3e scatter apparaît
-  // (de gauche à droite), s'il reste au moins une colonne à révéler après.
+  // Colonne de déclenchement de l'anticipation : où le scatter « avant-dernier »
+  // apparaît (de gauche à droite), s'il reste au moins une colonne à révéler après.
+  // Base : dès 3 scatters (4 = free spins). Free spins : dès 2 scatters (3 = retrigger).
+  const anticipNeed = state.inFs ? 2 : 3;
   let trigCol = -1;
   if (allowAnticip) {
     let cum = 0;
     for (let c = 0; c < CFG.REELS; c++) {
       for (let r = 0; r < CFG.ROWS; r++) if (cells[idx(c, r)].t === "SCATTER") cum++;
-      if (cum >= 3 && c < CFG.REELS - 1) { trigCol = c; break; }
+      if (cum >= anticipNeed && c < CFG.REELS - 1) { trigCol = c; break; }
     }
   }
 
@@ -820,6 +823,7 @@ async function showBanner(unitWin) {
    Free spins
    ---------------------------------------------------------------------- */
 async function runFreeSpins(bought = false) {
+  state.inFs = true;       // anticip dès 2 scatters pendant les free spins
   $("fsTitle").textContent = bought ? "FREE SPINS ACHETÉS" : "LE DIEU FOU S'ÉVEILLE";
   fsOverlay.querySelector("#fsSub").textContent = CFG.FS_AWARD + " FREE SPINS";
   Snd.fsTrigger();
@@ -875,6 +879,7 @@ async function runFreeSpins(bought = false) {
     if (fsWin >= CFG.MAX_WIN) break;
   }
 
+  state.inFs = false;      // sortie des free spins : anticip revient au seuil de base (3)
   fsHud.classList.remove("show");
   await showStageToast("TOURS GRATUITS TERMINÉS", fmt(fsWin * bet()) + " jetons", 2400);
   Snd.baseMusic();                      // retour à la musique de base

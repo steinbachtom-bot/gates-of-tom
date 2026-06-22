@@ -88,7 +88,7 @@ Hiérarchie de valeur (haut → bas) :
 | Premium II | Seigneur démon | `demon.png` | Tête de démon rouge/noir cornue. |
 | Premium III | Zeus cornu | `zeus.png` | Visage barbu cornu. |
 | Premium IV | Masque démon | `redmask.png` | Masque rouge cornu, yeux jaunes. |
-| Premium V | Diablotin | `imp.png` | Petit démon rouge couronné. |
+| Premium V | Diablotin | `imp.png` | ⚠️ **Non retenu** dans le jeu final (4 premiums : lion/démon/zeus/masque) — asset abandonné, aucun `imp.png` n'est embarqué. |
 | Royale | Laurier d'or | `laurel.png` | Couronne de laurier (victoire). |
 | Royale | Couronne | `crown2.png` | Couronne dorée à gemme. |
 | Gemme | Rubis | `ruby.png` | |

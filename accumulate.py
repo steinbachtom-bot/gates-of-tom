@@ -19,10 +19,9 @@ def worker(n, seed):
     mx = 0.0
     for _ in range(n):
         tb += 1.0
-        w, trig, _ = eng.play_base_spin(rng)
+        w, trig, _ = eng.play_bet(rng)   # pari complet, plafond combine base+FS
         if trig:
             fs += 1
-            w += eng.play_free_spins(rng)
         tw += w
         if w > 0:
             hits += 1

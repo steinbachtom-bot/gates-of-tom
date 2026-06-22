@@ -115,9 +115,23 @@ function resolveFreeSpins(){
   return total;
 }
 
+/* Resolution canonique d'UN pari complet : spin de base + free spins eventuels.
+   Le plafond MAX_WIN (5000x) s'applique au TOTAL du pari (base + feature),
+   standard du marche. C'est cette fonction qui fait foi pour les tests/sims ;
+   game.js reproduit la meme regle de plafond combine pour l'affichage. */
+function resolveBet(){
+  const b=resolveBaseSpin();           // base deja plafonnee a MAX_WIN
+  let win=b.win;
+  if(b.trigger){
+    win+=resolveFreeSpins();           // FS deja plafonnees a MAX_WIN
+    if(win>CFG.MAX_WIN) win=CFG.MAX_WIN; // plafond COMBINE base+FS
+  }
+  return {win, trigger:b.trigger};
+}
+
 // Export pour Node (tests). Sans effet dans le navigateur.
 if (typeof module !== "undefined" && module.exports) {
   module.exports = { CFG, PAY_KEYS, newCell, generateRound,
-                     scatterPay, resolveBaseSpin, resolveFreeSpins,
+                     scatterPay, resolveBaseSpin, resolveFreeSpins, resolveBet,
                      setAnte, isAnte, ANTE_COST_MULT };
 }

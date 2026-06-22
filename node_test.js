@@ -5,9 +5,9 @@ function simulate(n) {
   let bet = 0, win = 0, hits = 0, fs = 0, mx = 0;
   for (let i = 0; i < n; i++) {
     bet += 1;
-    const r = eng.resolveBaseSpin();
+    const r = eng.resolveBet();        // pari complet, plafond combine base+FS
     let w = r.win;
-    if (r.trigger) { fs++; w += eng.resolveFreeSpins(); }
+    if (r.trigger) fs++;
     win += w;
     if (w > 0) hits++;
     if (w > mx) mx = w;

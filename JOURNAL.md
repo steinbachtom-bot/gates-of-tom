@@ -215,13 +215,18 @@ Implémenté via `bigWinTierInfo(u)` (game.js) + classes `.tier-grand/enorme/oly
 - ✅ ~~Limiter les scatters à **1 par colonne**~~ *(maj 2026-06-22)* : mécanique standard/légale. Implémentée
   dans les deux moteurs (`fillColumn()` JS, `_fill_column()` Python ; remplissage + tumbles colonne par colonne).
   Vérifié : 0 violation, max 6 scatters/round.
-- 🔢 **CALIBRAGE À FAIRE (phase math finale)** — la contrainte 1 scatter/col a fortement baissé la fréquence
-  des free spins (1/177 → **1/464**), donc les RTP mesurés (2026-06-22, leak corrigé) sont déséquilibrés :
-  **NORMAL 65 %**, **ANTE 134 %** (coût 1,25×), **ACHAT 64 %** (coût 100×). À recalibrer : remonter `PAY_SCALE`
-  (normal → ~96 %), régler le multiplicateur/coût de l'ante (RTP-neutre ≈ base), baisser le coût de l'achat
-  (~96 %). ⚠️ Attention : avec un gros `PAY_SCALE`, le plafond 5000× rend le RTP **sous-linéaire** → itérer.
-  ⚠️ Tension produit : « doubler les free spins » à +25 % de mise est incompatible avec un RTP constant
-  (les FS pèsent ~60 % du RTP) → décider du positionnement de l'ante.
+- ✅ ~~Recalibrer le RTP du jeu NORMAL~~ *(maj 2026-06-22)* : la contrainte 1 scatter/col avait fait
+  tomber le normal à 65 %. Choix utilisateur = **« Hybride A, moins sec »** (RTP surtout via la feature,
+  mais base plus consistante pour avoir un peu de gain entre deux features). Calibré par Monte-Carlo :
+  **`SCATTER_W` 7→9** et **`PAY_SCALE` 0,851→0,890**. Profil mesuré (48 M spins) : **RTP ~96 %**
+  (centre, bruit inhérent ±0,7 %), hit 15,1 %, free spins **1/194**, répartition ~52 base / ~42 feature,
+  max win ~1/1,3 M. ⚠️ Le RTP exact reste flou en JS (slot très volatil) → précision certif = sim compilée
+  (cf. MATH_SPEC). Note : le hit rate (~15 %) ne bouge pas avec ces leviers — pour des gains de base **plus
+  fréquents** (pas seulement plus gros), il faudrait toucher aux **poids des symboles** (réglage séparé).
+- 🔢 **CALIBRAGE ANTE & ACHAT À FAIRE (phase math finale)** — après le recalibrage normal, restent à régler :
+  **ANTE** (~134 % avant, coût 1,25×) → choisir multiplicateur/coût pour un RTP cohérent ; **ACHAT** (~64 %,
+  coût 100×) → ajuster le coût (~96 %). ⚠️ Tension produit : « doubler les free spins » à +25 % de mise est
+  incompatible avec un RTP constant (les FS pèsent gros) → décider du positionnement de l'ante.
 - 🌐 Bloquants mise en ligne **côté business** (pas l'app) : domaine + AdSense (voir mémoire WZ Guide — projet voisin).
 
 ---

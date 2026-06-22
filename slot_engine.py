@@ -50,7 +50,7 @@ PAYTABLE = {
 }
 
 # Scatter (Zeus) : poids d'apparition + gains directs (x mise) selon le nombre.
-SCATTER_WEIGHT = 7
+SCATTER_WEIGHT = 9
 SCATTER_PAYS = {4: 3.0, 5: 5.0, 6: 100.0}  # 6+ regroupe ici
 SCATTERS_TO_TRIGGER = 4
 FREE_SPINS_AWARDED = 15
@@ -88,7 +88,7 @@ def _draw_mult_value(rng):
 
 # Scaler global applique a TOUS les gains. Sert a regler le RTP au plus juste :
 # le RTP est ~lineaire en fonction de ce facteur.
-PAY_SCALE = 0.851
+PAY_SCALE = 0.890
 
 
 def _pay_for_count(symbol, count):

@@ -13,11 +13,11 @@ const CFG = {
     gem_red:[1,1.5,10], gem_purple:[0.8,1.2,8], gem_yellow:[0.5,1,6],
     gem_green:[0.4,0.9,5], gem_blue:[0.25,0.75,4]
   },
-  SCATTER_W:7, MULT_W:5,
+  SCATTER_W:9, MULT_W:5,
   SCATTER_PAYS:{4:3,5:5,6:100}, TRIGGER:4, FS_AWARD:15, FS_RETRIG:5,
   MULT_VALUES:[2,3,4,5,6,8,10,12,15,20,25,50,100,250,500],
   MULT_WEIGHTS:[300,250,200,160,130,90,70,50,35,22,14,6,3,1,1],
-  PAY_SCALE:0.851, MAX_WIN:5000
+  PAY_SCALE:0.890, MAX_WIN:5000
 };
 
 const PAY_KEYS = Object.keys(CFG.SYMBOLS);

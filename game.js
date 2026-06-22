@@ -280,7 +280,7 @@ const state = {
   lastBigWin: false, lastFs: false,   // drapeaux du dernier spin (pour l'autoplay)
   inFs: false,             // true pendant les free spins (anticip dès 2 scatters : retrigger à 3)
 };
-const BUY_COST_MULT = 100; // achat des free spins = 100x la mise
+const BUY_COST_MULT = 88; // achat des free spins = 88x la mise (calibré RTP ~95,2 %, E[FS]≈83,8x)
 
 // Vitesses : multiplicateur applique a toutes les durees d'animation.
 // NORMAL = de base (le plus lent), TURBO = l'ancienne vitesse rapide.
@@ -1096,7 +1096,7 @@ function buildPaytable() {
     `<b>Tumble :</b> les gagnants disparaissent, les autres tombent, de nouveaux arrivent — tant qu'il y a un gain.<br>` +
     `<b>Orbes :</b> les multiplicateurs présents s'additionnent et multiplient le gain de la séquence.<br>` +
     `<b>Free spins :</b> 4 Orbes d'Olympe ou plus déclenchent 15 tours ; multiplicateur persistant.<br>` +
-    `<b>Ante bet :</b> mise +25 %, free spins plus fréquents. <b>Buy :</b> achat direct (100× la mise).<br>` +
+    `<b>Ante bet :</b> mise +25 %, free spins plus fréquents. <b>Buy :</b> achat direct (88× la mise).<br>` +
     `<b>Max win :</b> 5000× la mise. <b>RTP :</b> ≈ 96 %.` +
     `</p></div>`;
 

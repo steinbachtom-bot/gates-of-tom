@@ -2,7 +2,7 @@
 
 > Récapitulatif de tout ce qui a été fait, et des décisions prises.
 > Projet : slot machine « pay-anywhere » type Gates of Olympus — **jetons virtuels uniquement**.
-> Dernière mise à jour : 2026-06-20.
+> Dernière mise à jour : 2026-06-22.
 
 ---
 
@@ -115,21 +115,46 @@ Workflow récurrent : **l'utilisateur génère les visuels en externe** (ChatGPT
 ## 6. Animations & game feel
 
 - **Cascade (tumble)** : FLIP animation, chute colonne par colonne.
-- **Anticipation scatter** : quand 3 scatters sont à l'écran → **pulsation** des scatters déjà posés
-  + **pause** des colonnes pas encore révélées. L'effet apparaît **pendant** la cascade (pas après).
+- **Anticipation scatter** (drapeau `state.inFs`) : pulsation des scatters déjà posés + **pause** des
+  colonnes pas encore révélées, **pendant** la cascade. Seuil dépendant du contexte :
+  - **Jeu de base** : dès **3 scatters** (il en faut 4 pour les free spins).
+  - **Free spins** : dès **2 scatters** (il en faut 3 pour un retrigger). *(maj 2026-06-22)*
 - **Révélation des orbes** : zap + `flashMultTotal`, `sparkBurst`, `floatWin`, `countUpEl`, count-up requestAnimationFrame.
-- **Big Win** — présentation à deux niveaux (décision utilisateur) :
+
+### Big Win — présentation à deux niveaux (décision utilisateur)
 
 | Gain | Présentation |
 |---|---|
-| **20× à 99×** | Panneau `win_plaque.png` seul (pas de vidéo, pas de musique big win) |
-| **100× et plus** | Panneau **+ vidéo** `bigwin.mp4` + **musique big win** |
+| **20× à 99×** (non-mega) | **Panneau seul** `win_plaque.png` — pas de vidéo, pas de musique big win |
+| **100× et plus** (mega) | **Animation seule** : vidéo `bigwin.mp4` + musique big win (**plus de panneau**) |
 
-- **Fermeture du panneau** : reste affiché **jusqu'au tap du joueur** (indice « Appuyez pour continuer »).
+> ⚠️ Évolution (2026-06-22) : à l'origine le mega affichait panneau **ET** vidéo. Désormais **mega = animation
+> seule** (le cadre du panneau est retiré, seuls **libellé + montant** restent par-dessus la vidéo) et
+> **non-mega = panneau seul**. Le montant est conservé sur le mega (sinon le joueur ne verrait pas son gain).
+
+### Paliers de gain différenciés *(maj 2026-06-22)*
+
+Chaque palier a sa **propre identité** (couleur du libellé, intensité, durée de décompte croissante) :
+
+| Palier | Plage | Présentation | Identité visuelle | Décompte |
+|---|---|---|---|---|
+| **GRAND** | 20–49× | panneau | or sobre | 1,3 s |
+| **ÉNORME** | 50–99× | panneau | or chaud + halo renforcé | 1,8 s |
+| **OLYMPIEN** | 100–499× | animation + musique | aura d'**ichor** (turquoise divin) | 2,8 s |
+| **DÉMENTIEL** | 500×+ | animation + musique | **oxblood + or**, pulsation « folie » | 3,8 s |
+
+Implémenté via `bigWinTierInfo(u)` (game.js) + classes `.tier-grand/enorme/olympien/dementiel` (CSS).
+
+### Autres décisions Big Win
+
+- **Fermeture du panneau / écran** : reste affiché **jusqu'au tap du joueur** (indice « Appuyez pour continuer »).
   Exception : en **autoplay**, fermeture auto (mega 6 s / non-mega 3 s) pour ne pas bloquer l'enchaînement.
-- **Vidéo Big Win** : à la fin (`ended`), retour à la **frame 0** (sinon elle gelait sur une image
-  mi-animation → effet « bug »). Clip choisi : **B (fade)**.
-- Texte Big Win centré dans le carré noir du portail (container-query dédiée), rétréci pour ne pas déborder.
+- **Fin de l'animation mega** *(maj 2026-06-22)* : au lieu de figer la **frame 0** de la vidéo, on révèle le
+  **décor du jeu SANS la grille de symboles** (portail vide) + palier/montant. Via `body.bigwin-reveal` :
+  masque la vidéo + les symboles (la grille n'a pas de fond propre → le portail noir vient de l'image de fond)
+  et allège le voile sombre. Tout est restauré au tap.
+- Texte Big Win calé sur le portail (container-query) et **rétréci/resserré** pour ne pas déborder du panneau
+  (testé jusqu'à des montants longs type « 250 000,00 »). Clip vidéo choisi : **B (fade)**.
 
 ---
 
@@ -140,8 +165,15 @@ Workflow récurrent : **l'utilisateur génère les visuels en externe** (ChatGPT
   → ajout de `flex-shrink: 0`.
 - **Écran « tap to start »** (`.start-overlay`) : icône 512 + logo + « Appuyez pour commencer »,
   câblé en script inline **indépendant de game.js** (backstop si game.js tarde / cache GitHub Pages).
-- **Réglages persistants (localStorage)** : mise, vitesse, sfx, musique, autoStopBig, autoStopFs.
-- **Autoplay** avec arrêts conditionnels : `autoStopBig` (stop sur gros gain), `autoStopFs` (stop sur free spins).
+- **Réglages persistants (localStorage `got_settings`)** : mise, vitesse, sfx, musique, autoStopBig, autoStopFs.
+- **Autoplay** avec arrêts conditionnels : `autoStopBig` (stop sur gros gain), `autoStopFs` (stop sur free spins) —
+  toggles dans le menu autoplay, persistés et restaurés.
+- **Menu unique « hamburger » (☰)** *(maj 2026-06-22)* : pour alléger la barre de contrôles, les boutons
+  **Gains** et **Sons** ont été regroupés sous un seul bouton ☰ qui ouvre un menu :
+  - **Sons** → se déplie en place (Tous les sons / Effets / Musique) — IDs des toggles préservés.
+  - **Gains** → ouvre la liste des gains.
+  Le menu est **aligné à gauche** du bouton (pas de débordement en portrait). Barre passée de 8 à 7 éléments.
+  *Objectif affiché par l'utilisateur : garder le moins de boutons possible sur l'écran de jeu.*
 
 ---
 
@@ -166,8 +198,16 @@ Workflow récurrent : **l'utilisateur génère les visuels en externe** (ChatGPT
 
 ## 10. Points ouverts / à décider (mineurs)
 
-- 🧹 Nettoyer l'orphelin `imp.png` (asset non utilisé).
-- 🔢 Lever l'ambiguïté du **max win base + FS** (5000× vs 10000× ?) côté math.
+- ✅ ~~Nettoyer l'orphelin `imp.png`~~ *(maj 2026-06-22)* : aucun fichier `imp.png` n'existe dans
+  le projet (rien à supprimer) ; le Diablotin « Premium V » du handoff n'a pas été retenu (4 premiums
+  finaux). Référence stale annotée dans `assets/DESIGN_HANDOFF.md`.
+- ✅ ~~Lever l'ambiguïté du **max win base + FS**~~ *(maj 2026-06-22)* : tranché à **5000× sur le TOTAL
+  du pari** (base + free spins), standard du marché. Avant, base (≤5000×) et FS (≤5000×) étaient plafonnés
+  séparément → cumul possible jusqu'à 10000×. Correctif : plafond **combiné** dans la source de vérité
+  (`engine.js` → `resolveBet()`, `slot_engine.py` → `play_bet()`), répercuté dans `game.js`
+  (`runFreeSpins(bought, startWin)` : la session FS est bornée par `MAX_WIN − gain de base`) et les
+  simulateurs (`node_test.js`, `simulate.py`, `accumulate.py`). Vérifié : JS 4 M spins → RTP 96,0 %,
+  gain max = 5000,0× exactement.
 - 🌐 Bloquants mise en ligne **côté business** (pas l'app) : domaine + AdSense (voir mémoire WZ Guide — projet voisin).
 
 ---
@@ -183,5 +223,13 @@ Workflow récurrent : **l'utilisateur génère les visuels en externe** (ChatGPT
 
 ## 12. Derniers commits notables
 
+Du plus récent au plus ancien :
+
+- `c496f60` — Big Win (mega) : fin d'animation → décor sans la grille (portail vide) au lieu de la frame figée.
+- `c8c8aa3` — Paliers Big Win différenciés (couleur/intensité/durée) + menu unique hamburger (Sons & Gains).
+- `8e78aa3` — Big Win : 100×+ animation seule (sans panneau) · panneau 20-99× resserré · anticip dès 2 scatters en FS.
 - `a3d533e` — Big Win : le panneau (20-99×) reste affiché jusqu'au tap.
-- (rebrand Curse of Hades, favicon/OG, écran tap-to-start, compression vidéos, panneau de gain, etc.)
+- (avant : rebrand Curse of Hades, favicon/OG, écran tap-to-start, compression vidéos, panneau de gain, etc.)
+
+> Convention : quand l'utilisateur dit « commit/push », je commit ET pousse sur GitHub. Chaque changement de
+> code observable est vérifié en **preview navigateur** (captures) avant commit, et le standalone est reconstruit.

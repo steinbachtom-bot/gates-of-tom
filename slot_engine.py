@@ -225,3 +225,18 @@ def play_free_spins(rng):
             break
 
     return total
+
+
+def play_bet(rng):
+    """
+    Un pari complet : spin de base + free spins eventuels.
+    Le plafond MAX_WIN (5000x) s'applique au TOTAL du pari (base + feature),
+    standard du marche. C'est la fonction qui fait foi pour le RTP.
+    Retourne (gain_total_x_mise, declenche_free_spins, nb_scatters).
+    """
+    win, trigger, sc = play_base_spin(rng)   # base deja plafonnee a MAX_WIN
+    if trigger:
+        win += play_free_spins(rng)          # FS deja plafonnees a MAX_WIN
+        if win > MAX_WIN:                     # plafond COMBINE base+FS
+            win = MAX_WIN
+    return win, trigger, sc

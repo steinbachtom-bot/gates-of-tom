@@ -834,7 +834,7 @@ async function showBanner(unitWin) {
 /* ----------------------------------------------------------------------
    Free spins
    ---------------------------------------------------------------------- */
-async function runFreeSpins(bought = false) {
+async function runFreeSpins(bought = false, startWin = 0) {
   state.inFs = true;       // anticip dès 2 scatters pendant les free spins
   $("fsTitle").textContent = bought ? "FREE SPINS ACHETÉS" : "LE DIEU FOU S'ÉVEILLE";
   fsOverlay.querySelector("#fsSub").textContent = CFG.FS_AWARD + " FREE SPINS";
@@ -852,6 +852,9 @@ async function runFreeSpins(bought = false) {
 
   fsHud.classList.add("show");
   let persist = 0, fsWin = 0, spins = CFG.FS_AWARD;
+  // Plafond combiné base+FS : la session FS ne peut pas dépasser le solde
+  // restant jusqu'à MAX_WIN (cf. eng.resolveBet) — max win 5000× = total du pari.
+  const fsCap = Math.max(0, CFG.MAX_WIN - startWin);
   const setHud = () => {
     $("fsCount").textContent = spins;
     $("fsMult").textContent = "x" + persist;
@@ -875,7 +878,7 @@ async function runFreeSpins(bought = false) {
     w += scatterPay(sc);
     const fsBefore = fsWin;
     fsWin += w;
-    if (fsWin > CFG.MAX_WIN) { fsWin = CFG.MAX_WIN; }
+    if (fsWin > fsCap) { fsWin = fsCap; }
     const retrig = sc >= 3;
     if (retrig) spins += CFG.FS_RETRIG;
     setHud();
@@ -888,7 +891,7 @@ async function runFreeSpins(bought = false) {
       await sleep(180);
     }
     if (retrig) { Snd.fsTrigger(); await showStageToast("RETRIGGER", "+" + CFG.FS_RETRIG + " FREE SPINS", 1400); }
-    if (fsWin >= CFG.MAX_WIN) break;
+    if (fsWin >= fsCap) break;
   }
 
   state.inFs = false;      // sortie des free spins : anticip revient au seuil de base (3)
@@ -940,7 +943,7 @@ async function spin() {
   // free spins ?
   if (sc >= CFG.TRIGGER) {
     state.lastFs = true;
-    const fsUnit = await runFreeSpins();
+    const fsUnit = await runFreeSpins(false, unitWin);   // plafond combiné base+FS
     await creditWin(fsUnit);
   }
 

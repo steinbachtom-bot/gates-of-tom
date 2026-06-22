@@ -36,6 +36,12 @@ def run(n_spins, seed=12345):
             fs_total_win += fs_win
             round_win += fs_win
 
+        # Plafond COMBINE base+FS (cf. eng.play_bet) : le max win 5000x vaut
+        # pour le TOTAL du pari. La ventilation base/FS ci-dessus reste brute
+        # (pre-plafond) ; l'ecart n'apparait que sur de tres rares rounds plafonnes.
+        if round_win > eng.MAX_WIN:
+            round_win = eng.MAX_WIN
+
         total_win += round_win
         if round_win > 0:
             wins_count += 1

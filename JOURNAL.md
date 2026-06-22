@@ -214,7 +214,9 @@ Implémenté via `bigWinTierInfo(u)` (game.js) + classes `.tier-grand/enorme/oly
 
 ## 11. Conventions de travail
 
-- Quand l'utilisateur dit **« commit »**, je commit **ET** je **push** sur GitHub automatiquement.
+- **Commit + push automatiques après CHAQUE modification** *(maj 2026-06-22)* : l'utilisateur teste
+  sur son portable via GitHub Pages, donc chaque changement terminé est commité **et** poussé sur `main`
+  sans attendre — standalone reconstruit si `engine.js`/`game.js`/`index.html` ont changé.
 - Les visuels/vidéos/sons sont produits en externe par l'utilisateur ; j'écris les **prompts**
   (ChatGPT / Suno / PixVerse) puis j'**intègre** les livrables.
 - Scripts helper dans `/tmp` (slice_symbols.py, measure.py, transp.py) — modifiés par l'utilisateur, **ne pas écraser**.

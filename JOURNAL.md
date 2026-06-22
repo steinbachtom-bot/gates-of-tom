@@ -208,6 +208,20 @@ Implémenté via `bigWinTierInfo(u)` (game.js) + classes `.tier-grand/enorme/oly
   (`runFreeSpins(bought, startWin)` : la session FS est bornée par `MAX_WIN − gain de base`) et les
   simulateurs (`node_test.js`, `simulate.py`, `accumulate.py`). Vérifié : JS 4 M spins → RTP 96,0 %,
   gain max = 5000,0× exactement.
+- ✅ ~~Bug leak ante → free spins~~ *(maj 2026-06-22)* : le boost de scatter de l'**ante** continuait de
+  s'appliquer **pendant les free spins** → retriggers en boucle, RTP ante mesuré à **2789 %**. Corrigé :
+  `resolveFreeSpins()` (engine.js) et `runFreeSpins()` (game.js) **forcent l'ante à OFF** pendant la feature
+  (save/restore). L'ante ne booste plus que le jeu de base.
+- ✅ ~~Limiter les scatters à **1 par colonne**~~ *(maj 2026-06-22)* : mécanique standard/légale. Implémentée
+  dans les deux moteurs (`fillColumn()` JS, `_fill_column()` Python ; remplissage + tumbles colonne par colonne).
+  Vérifié : 0 violation, max 6 scatters/round.
+- 🔢 **CALIBRAGE À FAIRE (phase math finale)** — la contrainte 1 scatter/col a fortement baissé la fréquence
+  des free spins (1/177 → **1/464**), donc les RTP mesurés (2026-06-22, leak corrigé) sont déséquilibrés :
+  **NORMAL 65 %**, **ANTE 134 %** (coût 1,25×), **ACHAT 64 %** (coût 100×). À recalibrer : remonter `PAY_SCALE`
+  (normal → ~96 %), régler le multiplicateur/coût de l'ante (RTP-neutre ≈ base), baisser le coût de l'achat
+  (~96 %). ⚠️ Attention : avec un gros `PAY_SCALE`, le plafond 5000× rend le RTP **sous-linéaire** → itérer.
+  ⚠️ Tension produit : « doubler les free spins » à +25 % de mise est incompatible avec un RTP constant
+  (les FS pèsent ~60 % du RTP) → décider du positionnement de l'ante.
 - 🌐 Bloquants mise en ligne **côté business** (pas l'app) : domaine + AdSense (voir mémoire WZ Guide — projet voisin).
 
 ---

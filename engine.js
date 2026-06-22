@@ -44,6 +44,29 @@ function newCell(){
   if(s==="MULT") return {t:"MULT", v:wchoice(CFG.MULT_VALUES,CFG.MULT_WEIGHTS)};
   return {t:s, v:0};
 }
+// Tirage d'une case SANS scatter (pour la contrainte "max 1 scatter par colonne").
+const DRAW_POOL_NS = [...PAY_KEYS, "MULT"];
+const DRAW_W_NS = [...BASE_PAY_W, CFG.MULT_W];
+function newCellNoScatter(){
+  const s=wchoice(DRAW_POOL_NS, DRAW_W_NS);
+  if(s==="MULT") return {t:"MULT", v:wchoice(CFG.MULT_VALUES,CFG.MULT_WEIGHTS)};
+  return {t:s, v:0};
+}
+/* Remplit `need` nouvelles cases d'une colonne en garantissant AU PLUS 1 scatter
+   par colonne (les cases conservées `kept` peuvent déjà contenir un scatter). */
+function fillColumn(kept, need){
+  let hasScatter = kept.some(c=>c.t==="SCATTER");
+  const out=[];
+  for(let k=0;k<need;k++){
+    let cell=newCell();
+    if(cell.t==="SCATTER"){
+      if(hasScatter) cell=newCellNoScatter();   // déjà un scatter ici → re-tire sans scatter
+      else hasScatter=true;
+    }
+    out.push(cell);
+  }
+  return out;
+}
 function payFor(sym,count){
   if(count<8) return 0;
   const tier = count<=9?0 : (count<=11?1:2);
@@ -53,7 +76,11 @@ const idx=(c,r)=>c*CFG.ROWS+r;
 
 /* Genere un round complet et renvoie les FRAMES pour l'animation. */
 function generateRound(){
-  let cells = Array.from({length:CFG.CELLS}, newCell);
+  let cells = new Array(CFG.CELLS);          // remplissage colonne par colonne (max 1 scatter/col)
+  for(let c=0;c<CFG.REELS;c++){
+    const col=fillColumn([], CFG.ROWS);
+    for(let r=0;r<CFG.ROWS;r++) cells[idx(c,r)]=col[r];
+  }
   const frames=[];
   let baseWin=0;
   while(true){
@@ -71,7 +98,7 @@ function generateRound(){
       const kept=[];
       for(let r=0;r<CFG.ROWS;r++){ const cell=cells[idx(c,r)]; if(!winSyms.has(cell.t)) kept.push(cell); }
       const need=CFG.ROWS-kept.length;
-      const col=[]; for(let k=0;k<need;k++) col.push(newCell());
+      const col=fillColumn(kept, need);   // kept contient le scatter persistant éventuel
       col.push(...kept);
       for(let r=0;r<CFG.ROWS;r++) next[idx(c,r)]=col[r];
     }
@@ -100,6 +127,8 @@ function resolveBaseSpin(){
   return {win, trigger:r.scatters>=CFG.TRIGGER};
 }
 function resolveFreeSpins(){
+  const savedAnte=anteActive;
+  anteActive=false;            // l'ante ne booste QUE le jeu de base, jamais les free spins
   let spins=CFG.FS_AWARD, persist=0, total=0;
   while(spins>0){
     spins--;
@@ -112,6 +141,7 @@ function resolveFreeSpins(){
     if(r.scatters>=3) spins+=CFG.FS_RETRIG;
     if(total>=CFG.MAX_WIN){ total=CFG.MAX_WIN; break; }
   }
+  anteActive=savedAnte;
   return total;
 }
 

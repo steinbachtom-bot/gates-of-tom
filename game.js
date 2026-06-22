@@ -835,6 +835,8 @@ async function showBanner(unitWin) {
    Free spins
    ---------------------------------------------------------------------- */
 async function runFreeSpins(bought = false, startWin = 0) {
+  const savedAnte = isAnte();
+  setAnte(false);          // les free spins n'héritent JAMAIS du boost ante (sinon retriggers en boucle)
   state.inFs = true;       // anticip dès 2 scatters pendant les free spins
   $("fsTitle").textContent = bought ? "FREE SPINS ACHETÉS" : "LE DIEU FOU S'ÉVEILLE";
   fsOverlay.querySelector("#fsSub").textContent = CFG.FS_AWARD + " FREE SPINS";
@@ -895,6 +897,7 @@ async function runFreeSpins(bought = false, startWin = 0) {
   }
 
   state.inFs = false;      // sortie des free spins : anticip revient au seuil de base (3)
+  setAnte(savedAnte);      // restaure le réglage ante du joueur
   fsHud.classList.remove("show");
   await showStageToast("TOURS GRATUITS TERMINÉS", fmt(fsWin * bet()) + " jetons", 2400);
   Snd.baseMusic();                      // retour à la musique de base

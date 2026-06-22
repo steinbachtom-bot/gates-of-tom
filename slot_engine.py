@@ -110,6 +110,38 @@ def _new_cell(rng):
     return (s, 0)
 
 
+# Tirage SANS scatter (contrainte "max 1 scatter par colonne").
+_DRAW_POOL_NS = _PAY_SYMBOLS + ["MULT"]
+_DRAW_WEIGHTS_NS = [SYMBOL_WEIGHTS[s] for s in _PAY_SYMBOLS] + [MULT_WEIGHT]
+
+
+def _new_cell_no_scatter(rng):
+    s = rng.choices(_DRAW_POOL_NS, weights=_DRAW_WEIGHTS_NS, k=1)[0]
+    if s == "MULT":
+        return ("MULT", _draw_mult_value(rng))
+    return (s, 0)
+
+
+def _fill_column(rng, kept, need):
+    """`need` nouvelles cases pour une colonne, AU PLUS 1 scatter par colonne
+    (kept = cases conservées, peut déjà contenir un scatter)."""
+    has_scatter = any(t == "SCATTER" for (t, _v) in kept)
+    out = []
+    for _ in range(need):
+        cell = _new_cell(rng)
+        if cell[0] == "SCATTER":
+            if has_scatter:
+                cell = _new_cell_no_scatter(rng)
+            else:
+                has_scatter = True
+        out.append(cell)
+    return out
+
+
+def _idx(c, r):
+    return c * ROWS + r
+
+
 def play_round(rng):
     """
     Joue un round complet (base ou free spin) et retourne un dict :
@@ -117,14 +149,14 @@ def play_round(rng):
     mult_sum   : somme des orbes presents a la fin (0 si aucun)
     scatters   : nombre de scatters apparus
     """
-    # Remplissage initial
-    grid = [_new_cell(rng) for _ in range(CELLS)]
+    # Remplissage initial colonne par colonne (max 1 scatter par colonne)
+    grid = [None] * CELLS
+    for c in range(REELS):
+        col = _fill_column(rng, [], ROWS)
+        for r in range(ROWS):
+            grid[_idx(c, r)] = col[r]
 
     base_win = 0.0
-    scatters_seen = 0
-
-    # Compter les scatters de la grille initiale
-    scatters_seen += sum(1 for c in grid if c[0] == "SCATTER")
 
     while True:
         # Compter les symboles de paiement
@@ -146,23 +178,19 @@ def play_round(rng):
 
         base_win += step_win
 
-        # Retirer les symboles gagnants ; orbes + scatters restent en place.
-        new_grid = []
-        empties = 0
-        for (t, v) in grid:
-            if t in winning_symbols:
-                empties += 1
-            else:
-                new_grid.append((t, v))
-        # Refill : nouvelles cases en haut
-        for _ in range(empties):
-            cell = _new_cell(rng)
-            if cell[0] == "SCATTER":
-                scatters_seen += 1
-            new_grid.append(cell)
+        # Tumble colonne par colonne : les gagnants tombent, scatters/orbes restent.
+        new_grid = list(grid)
+        for c in range(REELS):
+            kept = [grid[_idx(c, r)] for r in range(ROWS)
+                    if grid[_idx(c, r)][0] not in winning_symbols]
+            need = ROWS - len(kept)
+            col = _fill_column(rng, kept, need) + kept  # nouvelles cases en haut
+            for r in range(ROWS):
+                new_grid[_idx(c, r)] = col[r]
         grid = new_grid
 
-    # Somme des orbes multiplicateurs presents sur la grille finale
+    # Scatters et orbes presents sur la grille finale (scatters jamais retires).
+    scatters_seen = sum(1 for (t, _v) in grid if t == "SCATTER")
     mult_sum = sum(v for (t, v) in grid if t == "MULT")
 
     return {

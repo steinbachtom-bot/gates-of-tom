@@ -24,9 +24,10 @@ const PAY_KEYS = Object.keys(CFG.SYMBOLS);
 const DRAW_POOL = [...PAY_KEYS, "SCATTER", "MULT"];
 const BASE_PAY_W = PAY_KEYS.map(k=>CFG.SYMBOLS[k]);
 
-// Ante bet : mise +25 %, scatters boostes (~double la frequence des free spins).
+// Ante bet : mise +25 %, scatters boostes (free spins ~1,55x plus frequents).
+// Calibre RTP-neutre : ante ~95,7 % (<= RTP de base, certification-safe).
 let anteActive = false;
-const ANTE_SCATTER_MULT = 1.9;
+const ANTE_SCATTER_MULT = 1.14;
 const ANTE_COST_MULT = 1.25;
 function setAnte(v){ anteActive = !!v; }
 function isAnte(){ return anteActive; }

@@ -305,14 +305,16 @@ const fsHud = $("fsHud");
 const anteBtn = $("anteBtn");
 const buyBtn = $("buyBtn");
 const buyCostEl = $("buyCost");
-const payBtn = $("payBtn");
 const ptOverlay = $("ptOverlay");
 const ptClose = $("ptClose");
 const speedBtn = $("speedBtn");
 const speedLbl = $("speedLbl");
 const anteCostEl = $("anteCost");
-const soundBtn = $("soundBtn");
-const sndMenu = $("sndMenu");
+const menuBtn = $("menuBtn");      // hamburger : regroupe Sons + Gains
+const mainMenu = $("mainMenu");
+const mmSons = $("mmSons");
+const mmGains = $("mmGains");
+const sndSub = $("sndSub");
 const autoBtn = $("autoBtn");
 const autoMenu = $("autoMenu");
 const autoIco = $("autoIco");
@@ -1171,13 +1173,31 @@ function updateSndMenu() {
   sfxToggle.classList.toggle("on", sfx);
   musToggle.classList.toggle("on", mus);
   allToggle.classList.toggle("on", sfx || mus);
-  soundBtn.classList.toggle("muted", !sfx && !mus);
+  menuBtn.classList.toggle("muted", !sfx && !mus);
 }
-soundBtn.addEventListener("click", (e) => {
+menuBtn.addEventListener("click", (e) => {
   e.stopPropagation();
   kickAudio();
   Snd.click();
-  sndMenu.classList.toggle("show");
+  mainMenu.classList.toggle("show");
+  if (!mainMenu.classList.contains("show")) {   // fermeture -> on replie le sous-menu Sons
+    sndSub.classList.remove("show"); mmSons.classList.remove("open");
+  }
+});
+// « Sons » : déplie/replie les réglages audio (le menu reste ouvert)
+mmSons.addEventListener("click", (e) => {
+  e.stopPropagation();
+  Snd.click();
+  const open = sndSub.classList.toggle("show");
+  mmSons.classList.toggle("open", open);
+});
+// « Gains » : ouvre la liste des gains et ferme le menu
+mmGains.addEventListener("click", (e) => {
+  e.stopPropagation();
+  Snd.click();
+  mainMenu.classList.remove("show");
+  sndSub.classList.remove("show"); mmSons.classList.remove("open");
+  ptOverlay.classList.add("show");
 });
 allToggle.addEventListener("click", (e) => {
   e.stopPropagation();
@@ -1194,7 +1214,10 @@ musToggle.addEventListener("click", (e) => {
   kickAudio();
   Snd.setMusic(!Snd.isMusicOn()); Snd.click(); updateSndMenu(); saveSettings();
 });
-document.addEventListener("click", () => { sndMenu.classList.remove("show"); });
+document.addEventListener("click", () => {
+  mainMenu.classList.remove("show");
+  sndSub.classList.remove("show"); mmSons.classList.remove("open");
+});
 speedBtn.addEventListener("click", () => {
   Snd.click();
   state.speedIndex = (state.speedIndex + 1) % SPEEDS.length;  // modifiable même en free spins
@@ -1229,7 +1252,6 @@ if (autoStopFsBtn) autoStopFsBtn.addEventListener("click", (e) => {
   state.autoStopFs = !state.autoStopFs; updateAutoStops(); saveSettings();
 });
 document.addEventListener("click", () => { autoMenu.classList.remove("show"); });
-payBtn.addEventListener("click", () => { Snd.click(); ptOverlay.classList.add("show"); });
 ptClose.addEventListener("click", () => { Snd.click(); ptOverlay.classList.remove("show"); });
 ptOverlay.addEventListener("click", (e) => { if (e.target === ptOverlay) ptOverlay.classList.remove("show"); });
 spinBtn.addEventListener("click", spin);

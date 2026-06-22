@@ -347,16 +347,31 @@
   .ante.on{box-shadow:0 0 16px rgba(156,47,63,.6);}
   .ante.on .ante-led{background:var(--ichor); box-shadow:0 0 10px var(--ichor);}
 
-  .sndbtn{min-width:42px; font-size:16px; line-height:1;}
-  .sndbtn.muted{color:var(--bone-faint); border-color:var(--edge-soft); opacity:.65; text-decoration:line-through;}
-  .snd-wrap{position:relative; display:inline-flex;}
-  .snd-menu{position:absolute; bottom:calc(100% + 10px); left:50%; transform:translateX(-50%);
-    display:none; flex-direction:column; gap:6px; padding:8px; min-width:158px; z-index:25;
+  /* ---- Menu unique (hamburger) : regroupe Sons + Gains ---- */
+  .menu-wrap{position:relative; display:inline-flex;}
+  .menubtn{display:flex; align-items:center; justify-content:center; min-width:48px; padding:0 14px;}
+  .menubtn.muted{color:var(--bone-faint); border-color:var(--edge-soft); opacity:.75;}
+  .menu-ico{display:flex; flex-direction:column; gap:4px; width:20px;}
+  .menu-ico i{display:block; height:2px; border-radius:2px; background:currentColor;}
+  /* aligné à gauche du bouton (le hamburger est le contrôle le plus à gauche) ->
+     le menu s'étend vers la droite et ne déborde pas en portrait mobile. */
+  .main-menu{position:absolute; bottom:calc(100% + 10px); left:0;
+    display:none; flex-direction:column; gap:6px; padding:8px; min-width:178px; z-index:25;
     background:linear-gradient(180deg,#1a140d,#0c070a); border:1px solid var(--edge); border-radius:10px;
     box-shadow:0 14px 34px rgba(0,0,0,.65);}
-  .snd-menu.show{display:flex;}
-  .snd-menu::after{content:""; position:absolute; top:100%; left:50%; transform:translateX(-50%);
+  .main-menu.show{display:flex;}
+  .main-menu::after{content:""; position:absolute; top:100%; left:22px;
     border:7px solid transparent; border-top-color:var(--edge);}
+  .mm-row{width:100%; height:auto; display:flex; align-items:center; justify-content:space-between; gap:14px;
+    padding:11px 12px; border-radius:7px; background:var(--ash); border:1px solid var(--edge-soft);
+    font-family:"Barlow Semi Condensed",sans-serif; text-transform:uppercase; letter-spacing:.14em;
+    font-size:12px; font-weight:600; color:var(--gold-3);}
+  .mm-row:hover{border-color:var(--gold); color:var(--gold-hi);}
+  .mm-caret{font-size:10px; transition:transform .18s;}
+  .mm-row.open .mm-caret{transform:rotate(180deg);}
+  .snd-sub{display:none; flex-direction:column; gap:6px; padding-left:8px;
+    border-left:1px solid var(--edge-soft); margin-left:4px;}
+  .snd-sub.show{display:flex;}
   .snd-row{width:100%; height:auto; display:flex; align-items:center; justify-content:space-between; gap:14px;
     padding:9px 11px; border-radius:7px; background:var(--ash); border:1px solid var(--edge-soft);
     font-family:"Barlow Semi Condensed",sans-serif; text-transform:uppercase; letter-spacing:.12em;
@@ -574,7 +589,7 @@
     .ante,.buy{padding:0 12px; font-size:11px;}
     .betbox{padding:4px 8px;}
     button{width:46px; height:46px; font-size:19px;}   /* cibles tactiles ≥44 px */
-    .sndbtn,.speedbtn{min-width:46px;}
+    .menubtn,.speedbtn{min-width:46px;}
     .betval{min-width:52px; font-size:15px;}
     .footer-note{font-size:9px;}
     /* perf : on retire les effets plein écran coûteux (grain + blur des nuages) */
@@ -734,14 +749,19 @@
   </div>
 
   <div class="controls">
-    <button class="info" id="payBtn" title="Liste des gains">GAINS</button>
-    <div class="snd-wrap">
-      <button class="info sndbtn" id="soundBtn" title="Son">♪</button>
-      <div class="snd-menu" id="sndMenu">
-        <button class="snd-row snd-master on" id="allToggle"><span>Tous les sons</span><span class="sw"></span></button>
-        <div class="snd-sep"></div>
-        <button class="snd-row on" id="sfxToggle"><span>Effets</span><span class="sw"></span></button>
-        <button class="snd-row on" id="musToggle"><span>Musique</span><span class="sw"></span></button>
+    <div class="menu-wrap">
+      <button class="info menubtn" id="menuBtn" title="Menu" aria-label="Menu">
+        <span class="menu-ico"><i></i><i></i><i></i></span>
+      </button>
+      <div class="main-menu" id="mainMenu">
+        <button class="mm-row" id="mmSons"><span>Sons</span><span class="mm-caret">▾</span></button>
+        <div class="snd-sub" id="sndSub">
+          <button class="snd-row snd-master on" id="allToggle"><span>Tous les sons</span><span class="sw"></span></button>
+          <div class="snd-sep"></div>
+          <button class="snd-row on" id="sfxToggle"><span>Effets</span><span class="sw"></span></button>
+          <button class="snd-row on" id="musToggle"><span>Musique</span><span class="sw"></span></button>
+        </div>
+        <button class="mm-row" id="mmGains"><span>Gains</span></button>
       </div>
     </div>
     <button class="info speedbtn" id="speedBtn" title="Vitesse des tours">

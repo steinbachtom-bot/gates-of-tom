@@ -21,6 +21,7 @@ Ce document résume la mécanique, les paramètres et les résultats mesurés.
 | Scatters par colonne | **1 maximum** (donc ≤ 6 scatters par grille) |
 | Poids orbe multiplicateur | 5 |
 | Scaler de gains (PAY_SCALE) | **0,890** (le bouton qui règle le RTP) |
+| Ante bet | mise **×1,25**, poids scatter **×1,14** (free spins ~1,55× plus fréquents) — **RTP-neutre ~95,7 %** (≤ base) ; le boost ne s'applique **pas** pendant les free spins |
 | Plafond max win | 5000× (sur le **total** du pari : base + free spins) |
 
 Le RTP est **linéaire** en fonction du scaler : pour viser un autre RTP, multiplier le scaler par `RTP_cible / RTP_mesuré`.

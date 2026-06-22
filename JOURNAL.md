@@ -223,10 +223,13 @@ Implémenté via `bigWinTierInfo(u)` (game.js) + classes `.tier-grand/enorme/oly
   max win ~1/1,3 M. ⚠️ Le RTP exact reste flou en JS (slot très volatil) → précision certif = sim compilée
   (cf. MATH_SPEC). Note : le hit rate (~15 %) ne bouge pas avec ces leviers — pour des gains de base **plus
   fréquents** (pas seulement plus gros), il faudrait toucher aux **poids des symboles** (réglage séparé).
-- 🔢 **CALIBRAGE ANTE & ACHAT À FAIRE (phase math finale)** — après le recalibrage normal, restent à régler :
-  **ANTE** (~134 % avant, coût 1,25×) → choisir multiplicateur/coût pour un RTP cohérent ; **ACHAT** (~64 %,
-  coût 100×) → ajuster le coût (~96 %). ⚠️ Tension produit : « doubler les free spins » à +25 % de mise est
-  incompatible avec un RTP constant (les FS pèsent gros) → décider du positionnement de l'ante.
+- ✅ ~~Calibrer l'ANTE~~ *(maj 2026-06-22)* : choix utilisateur = **Option A** (RTP-neutre, coût inchangé
+  ×1,25). La tension « doubler les FS à +25 % » étant impossible à RTP constant, on garde le coût ×1,25 et un
+  boost modéré : **`ANTE_SCATTER_MULT` 1,9→1,14** → free spins **~1,55× plus fréquents** (1/194→1/125),
+  **ante RTP ~95,7 %** (≤ base, certification-safe). Textes UI « double » → « free spins plus fréquents »
+  (titre bouton, aide in-game, game sheet B2B).
+- 🔢 **CALIBRAGE ACHAT À FAIRE (phase math finale)** — l'**ACHAT** des free spins reste à régler (~64 %,
+  coût 100×) → ajuster le coût pour viser ~96 %.
 - 🌐 Bloquants mise en ligne **côté business** (pas l'app) : domaine + AdSense (voir mémoire WZ Guide — projet voisin).
 
 ---

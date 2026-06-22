@@ -1096,7 +1096,7 @@ function buildPaytable() {
     `<b>Tumble :</b> les gagnants disparaissent, les autres tombent, de nouveaux arrivent — tant qu'il y a un gain.<br>` +
     `<b>Orbes :</b> les multiplicateurs présents s'additionnent et multiplient le gain de la séquence.<br>` +
     `<b>Free spins :</b> 4 Orbes d'Olympe ou plus déclenchent 15 tours ; multiplicateur persistant.<br>` +
-    `<b>Ante bet :</b> mise +25 %, double la chance de free spins. <b>Buy :</b> achat direct (100× la mise).<br>` +
+    `<b>Ante bet :</b> mise +25 %, free spins plus fréquents. <b>Buy :</b> achat direct (100× la mise).<br>` +
     `<b>Max win :</b> 5000× la mise. <b>RTP :</b> ≈ 96 %.` +
     `</p></div>`;
 

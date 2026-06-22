@@ -23,7 +23,7 @@
 | **Mécanique gain** | **Tumble** (cascades) |
 | **Multiplicateurs** | Orbes **×2 à ×500**, s'additionnent |
 | **Free spins** | 4+ scatters → **15 tours**, multiplicateur **persistant**, retrigger **+5** |
-| **Ante bet** | Oui (+25 % mise, double la chance de free spins) |
+| **Ante bet** | Oui (+25 % mise, free spins ~1,5× plus fréquents — RTP-neutre) |
 | **Bonus buy** | Oui (**100×** la mise) |
 | **Plateformes** | **HTML5** — desktop + mobile (portrait & paysage) |
 

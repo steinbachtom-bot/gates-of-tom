@@ -308,7 +308,7 @@ const buyCostEl = $("buyCost");
 const ptOverlay = $("ptOverlay");
 const ptClose = $("ptClose");
 const speedBtn = $("speedBtn");
-const speedLbl = $("speedLbl");
+const speedBolts = [...speedBtn.querySelectorAll(".spd-bolt")];  // 3 éclairs (1/vitesse)
 const anteCostEl = $("anteCost");
 const menuBtn = $("menuBtn");      // hamburger : regroupe Sons + Gains
 const mainMenu = $("mainMenu");
@@ -1138,8 +1138,10 @@ function updateBet() {
 }
 
 function updateSpeed() {
-  speedLbl.textContent = SPEEDS[state.speedIndex].name;
+  const lit = state.speedIndex + 1;   // NORMAL=1 éclair, RAPIDE=2, TURBO=3
+  speedBolts.forEach((b, i) => b.classList.toggle("on", i < lit));
   speedBtn.classList.toggle("turbo", SPEEDS[state.speedIndex].name === "TURBO");
+  speedBtn.title = "Vitesse : " + SPEEDS[state.speedIndex].name;
 }
 $("betUp").addEventListener("click", () => {
   Snd.click();

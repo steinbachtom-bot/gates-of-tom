@@ -17,10 +17,11 @@ Ce document résume la mécanique, les paramètres et les résultats mesurés.
 | Paramètre | Valeur |
 |---|---|
 | Poids des symboles | crown 22,5 → gem_blue 42,5 (croissant) |
-| Poids scatter | 7 |
+| Poids scatter | 9 |
+| Scatters par colonne | **1 maximum** (donc ≤ 6 scatters par grille) |
 | Poids orbe multiplicateur | 5 |
-| Scaler de gains (PAY_SCALE) | **0,851** (le bouton qui règle le RTP) |
-| Plafond max win | 5000× |
+| Scaler de gains (PAY_SCALE) | **0,890** (le bouton qui règle le RTP) |
+| Plafond max win | 5000× (sur le **total** du pari : base + free spins) |
 
 Le RTP est **linéaire** en fonction du scaler : pour viser un autre RTP, multiplier le scaler par `RTP_cible / RTP_mesuré`.
 
@@ -29,11 +30,11 @@ Le RTP est **linéaire** en fonction du scaler : pour viser un autre RTP, multip
 | Métrique | Valeur |
 |---|---|
 | **RTP cible** | 96,00 % |
-| **RTP mesuré** | ≈ 96 % (bande 95–97 % sur lots de 1 M ; ~8 M de spins agrégés) |
-| Hit rate (taux de gain) | ≈ 15,6 % |
-| Fréquence des free spins | ≈ 1 / 178 spins |
-| Gain max observé | ~5000× (plafond) |
-| Volatilité | **Élevée** (≈ 60 % du RTP vient des free spins) |
+| **RTP mesuré** | ≈ 95,5–96 % (centre ~96 % ; lots de 6 M entre 94,8 % et 96,2 % ; 48 M agrégés) |
+| Hit rate (taux de gain) | ≈ 15,1 % |
+| Fréquence des free spins | ≈ 1 / 194 spins |
+| Gain max observé | ~5000× (plafond), atteint ~1 / 1 300 000 spins |
+| Volatilité | **Élevée** (profil « hybride A » : ~44 % du RTP via les free spins, ~52 % via le jeu de base) |
 
 ## Note importante sur la précision du RTP
 

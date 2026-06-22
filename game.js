@@ -716,12 +716,15 @@ async function spinIntro() { /* la descente est geree par animateRound/dropIn */
    Écran Big Win : vidéo en fond + libellé de palier + montant qui défile
    (unitWin = gain en multiples de la mise)
    ---------------------------------------------------------------------- */
-function bigWinTier(u) {
-  if (u >= 500) return "DÉMENTIEL";
-  if (u >= 100) return "OLYMPIEN";
-  if (u >= 50) return "ÉNORME";
-  return "GRAND";
+// Palier de gain : nom affiché + clé CSS (identité visuelle) + durée du décompte.
+// Plus le palier est haut, plus le décompte est long (montée de tension).
+function bigWinTierInfo(u) {
+  if (u >= 500) return { name: "DÉMENTIEL", key: "dementiel", count: 3800 };
+  if (u >= 100) return { name: "OLYMPIEN",  key: "olympien",  count: 2800 };
+  if (u >= 50)  return { name: "ÉNORME",    key: "enorme",    count: 1800 };
+  return          { name: "GRAND",     key: "grand",     count: 1300 };
 }
+const BW_TIER_CLASSES = ["tier-grand", "tier-enorme", "tier-olympien", "tier-dementiel"];
 const bwVideo = $("bwVideo");
 const bwTag = $("bwTag");
 const bwAmount = $("bwAmount");
@@ -756,7 +759,8 @@ async function showStageToast(tag, big, ms) {
 async function showBanner(unitWin) {
   state.lastBigWin = true;                 // pour l'autoplay (stop sur big win)
   const chips = round2(unitWin * bet());
-  bwTag.textContent = bigWinTier(unitWin);
+  const tier = bigWinTierInfo(unitWin);
+  bwTag.textContent = tier.name;
   const mega = unitWin >= 100;             // 100x+ : grosse animation + musique ; 20–99x : panneau seul
   Snd.bigWin();                            // stinger (les deux paliers)
 
@@ -766,6 +770,8 @@ async function showBanner(unitWin) {
   if (bwHint) bwHint.classList.remove("show");
   bwAmount.textContent = fmt(0);
   winBanner.classList.toggle("mega", mega);   // .mega -> affiche la vidéo (CSS)
+  winBanner.classList.remove(...BW_TIER_CLASSES);
+  winBanner.classList.add("tier-" + tier.key);   // identité visuelle du palier
   winBanner.classList.add("show");
   document.body.classList.add("bigwin-active");   // masque HUD/contrôles pendant la célébration (mobile)
 
@@ -785,8 +791,8 @@ async function showBanner(unitWin) {
   const onTap = () => { if (!countDone) fastFwd = true; else dismiss = true; };
   winBanner.addEventListener("click", onTap);
 
-  // compteur qui défile (ease-out) — plus court pour les gains moyens
-  const T = mega ? 3000 : 1400, t0 = performance.now();
+  // compteur qui défile (ease-out) — durée croissante selon le palier (tension)
+  const T = tier.count, t0 = performance.now();
   await new Promise((res) => {
     function step(nowT) {
       if (fastFwd) { res(); return; }
@@ -812,7 +818,7 @@ async function showBanner(unitWin) {
 
   winBanner.removeEventListener("click", onTap);
   if (onEnded) bwVideo.removeEventListener("ended", onEnded);
-  winBanner.classList.remove("show", "mega");
+  winBanner.classList.remove("show", "mega", ...BW_TIER_CLASSES);
   document.body.classList.remove("bigwin-active");
   try { bwVideo.pause(); } catch (e) { /* ignore */ }
   if (mega) Snd.setTrack(prevTrack);      // retour à la musique précédente

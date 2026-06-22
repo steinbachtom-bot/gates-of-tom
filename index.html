@@ -494,6 +494,29 @@
   .bw-hint.show{opacity:.85; animation:hintPulse 1.8s ease-in-out infinite;}
   @keyframes hintPulse{0%,100%{opacity:.45;}50%{opacity:.9;}}
 
+  /* --- Différenciation des paliers Big Win (couleur + intensité par palier) --- */
+  /* GRAND (20-49x) : or sobre = style par défaut ci-dessus. */
+  /* ÉNORME (50-99x) : or plus chaud, halo renforcé (taille inchangée -> tient dans le panneau). */
+  .bigwin.tier-enorme .bw-tag{filter:drop-shadow(0 1px 0 var(--oxblood-deep)) drop-shadow(0 0 9px rgba(232,198,74,.55));}
+  .bigwin.tier-enorme .bw-amount{text-shadow:0 0 26px rgba(249,237,180,.9), 0 0 6px rgba(232,198,74,.7);}
+  /* OLYMPIEN (100-499x) : aura d'ichor (turquoise divin), texte sur la vidéo. */
+  .bigwin.tier-olympien .bw-tag{
+    background:linear-gradient(135deg,#1f4f49 0%,#7fe3d2 42%,#eafff9 54%,#3a9c8c 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 1px 0 #06201d) drop-shadow(0 0 14px rgba(127,227,210,.6));}
+  .bigwin.tier-olympien .bw-amount{font-size:9cqw; color:#eafff9;
+    text-shadow:0 0 28px rgba(127,227,210,.9), 0 0 8px rgba(214,255,245,.95);}
+  /* DÉMENTIEL (500x+) : folie oxblood + or, pulsation max, le plus gros. */
+  .bigwin.tier-dementiel .bw-tag{
+    background:linear-gradient(135deg,#2e0c12 0%,#9c2f3f 28%,#f9edb4 52%,#9c2f3f 74%,#2e0c12 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 1px 0 #1a0509) drop-shadow(0 0 16px rgba(156,47,63,.7));
+    animation:tierThrob 1.05s ease-in-out infinite;}
+  .bigwin.tier-dementiel .bw-amount{font-size:9.2cqw; color:#fff2cf;
+    text-shadow:0 0 34px rgba(156,47,63,.95), 0 0 12px rgba(249,237,180,.85);
+    animation:tierThrob 1.05s ease-in-out infinite;}
+  @keyframes tierThrob{0%,100%{transform:scale(1);}50%{transform:scale(1.055);}}
+
   /* panneau éphémère dans la zone de jeu (retrigger / fin free spins) */
   .toast{position:absolute; inset:0; z-index:7; display:none; flex-direction:column;
     align-items:center; justify-content:center; text-align:center; pointer-events:none; padding:0 6%;

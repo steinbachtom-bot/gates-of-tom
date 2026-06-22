@@ -174,7 +174,8 @@
     left:var(--fl,35.1%); top:var(--ft,33.5%); width:var(--fw,30.5%); height:var(--fh,49.4%);
     display:flex; align-items:center; justify-content:center;}
   .grid{width:100%; aspect-ratio:6/5; position:relative; overflow:hidden;
-    display:grid; grid-template-columns:repeat(6,1fr); grid-template-rows:repeat(5,1fr); gap:2.2%;}
+    display:grid; grid-template-columns:repeat(6,1fr); grid-template-rows:repeat(5,1fr); gap:2.2%;
+    transition:opacity .45s ease;}
 
   /* braises en superposition plein écran */
   .ember-layer{position:fixed; inset:0; z-index:3; pointer-events:none; overflow:hidden;}
@@ -484,6 +485,12 @@
      le libellé + montant restent (centrés au-dessus de la vidéo). */
   .bigwin.show.mega .bw-plaque-img{opacity:0;}
   .bigwin.show.mega .bw-plaque{filter:none;}
+  /* Fin de l'animation mega : à la place de la frame figée, on révèle le décor du jeu
+     SANS la grille de symboles (portail vide) -> on masque la vidéo + les symboles
+     et on allège le voile sombre pour laisser voir le fond. */
+  body.bigwin-reveal .bigwin.show.mega .bw-video{opacity:0;}
+  body.bigwin-reveal .stage .grid{opacity:0;}
+  body.bigwin-reveal .bigwin{background:radial-gradient(circle at 50% 46%, rgba(6,4,4,.16), rgba(6,4,4,.62) 84%);}
   /* bloc texte calé EXACTEMENT sur le portail (mêmes coords que la grille) et
      dimensionné relativement au portail (container query) -> centré + sans débordement */
   .bw-content{position:absolute; left:var(--fl); top:var(--ft); width:var(--fw); height:var(--fh);

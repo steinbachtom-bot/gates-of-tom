@@ -808,6 +808,10 @@ async function showBanner(unitWin) {
   bwAmount.textContent = fmt(chips);
   countDone = true;
 
+  // Fin de l'animation (mega) : à la place de la frame figée de la vidéo, on révèle
+  // le décor du jeu SANS la grille de symboles (portail vide) + palier/montant.
+  if (mega) document.body.classList.add("bigwin-reveal");
+
   // reste affiché jusqu'au tap du joueur (autoplay : referme tout seul pour ne pas bloquer)
   if (bwHint) bwHint.classList.add("show");
   await new Promise((res) => {
@@ -821,7 +825,7 @@ async function showBanner(unitWin) {
   winBanner.removeEventListener("click", onTap);
   if (onEnded) bwVideo.removeEventListener("ended", onEnded);
   winBanner.classList.remove("show", "mega", ...BW_TIER_CLASSES);
-  document.body.classList.remove("bigwin-active");
+  document.body.classList.remove("bigwin-active", "bigwin-reveal");
   try { bwVideo.pause(); } catch (e) { /* ignore */ }
   if (mega) Snd.setTrack(prevTrack);      // retour à la musique précédente
   await sleep(mega ? 300 : 150);

@@ -228,8 +228,9 @@ Implémenté via `bigWinTierInfo(u)` (game.js) + classes `.tier-grand/enorme/oly
   boost modéré : **`ANTE_SCATTER_MULT` 1,9→1,14** → free spins **~1,55× plus fréquents** (1/194→1/125),
   **ante RTP ~95,7 %** (≤ base, certification-safe). Textes UI « double » → « free spins plus fréquents »
   (titre bouton, aide in-game, game sheet B2B).
-- 🔢 **CALIBRAGE ACHAT À FAIRE (phase math finale)** — l'**ACHAT** des free spins reste à régler (~64 %,
-  coût 100×) → ajuster le coût pour viser ~96 %.
+- ✅ ~~Calibrer l'ACHAT des free spins~~ *(maj 2026-06-22)* : E[FS] re-mesuré à **83,8×** (avec les params
+  recalibrés). Coût d'achat **100× → 88×** (`BUY_COST_MULT`, game.js) → **buy RTP ~95,2 %** (≤ base,
+  certification-safe). Textes « 100× » → « 88× » (aide in-game, game sheet B2B). **Les 3 modes sont calibrés.**
 - 🌐 Bloquants mise en ligne **côté business** (pas l'app) : domaine + AdSense (voir mémoire WZ Guide — projet voisin).
 
 ---

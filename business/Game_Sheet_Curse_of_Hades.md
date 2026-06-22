@@ -24,7 +24,7 @@
 | **Multiplicateurs** | Orbes **×2 à ×500**, s'additionnent |
 | **Free spins** | 4+ scatters → **15 tours**, multiplicateur **persistant**, retrigger **+5** |
 | **Ante bet** | Oui (+25 % mise, free spins ~1,5× plus fréquents — RTP-neutre) |
-| **Bonus buy** | Oui (**100×** la mise) |
+| **Bonus buy** | Oui (**88×** la mise — RTP ~95,2 %) |
 | **Plateformes** | **HTML5** — desktop + mobile (portrait & paysage) |
 
 ---
@@ -53,7 +53,7 @@ Orbe multiplicateur (×2–×500).
 - **Orbes multiplicateurs** cumulatifs (jusqu'à ×500)
 - **Free spins** (15) avec multiplicateur persistant + **retrigger**
 - **Ante bet** (+25 %)
-- **Bonus buy** (100×)
+- **Bonus buy** (88×)
 - **Max win 5 000×**, **3 vitesses de jeu** (Normal / Rapide / Turbo)
 
 ## Technique

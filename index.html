@@ -380,6 +380,7 @@
     font-size:12px; font-weight:600; color:var(--gold-3);}
   .mm-row:hover{border-color:var(--gold); color:var(--gold-hi);}
   .mm-caret{font-size:10px; transition:transform .18s;}
+  .mm-ico{font-size:14px; color:var(--bone-dim); line-height:1;}
   .mm-row.open .mm-caret{transform:rotate(180deg);}
   .snd-sub{display:none; flex-direction:column; gap:6px; padding-left:8px;
     border-left:1px solid var(--edge-soft); margin-left:4px;}
@@ -787,6 +788,7 @@
             <button class="snd-row on" id="musToggle"><span>Musique</span><span class="sw"></span></button>
           </div>
           <button class="mm-row" id="mmGains"><span>Gains</span></button>
+          <button class="mm-row" id="mmFull"><span>Plein écran</span><span class="mm-ico">⤢</span></button>
         </div>
       </div>
       <button class="info speedbtn" id="speedBtn" title="Vitesse des tours">

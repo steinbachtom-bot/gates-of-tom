@@ -168,16 +168,18 @@ Implémenté via `bigWinTierInfo(u)` (game.js) + classes `.tier-grand/enorme/oly
 - **Réglages persistants (localStorage `got_settings`)** : mise, vitesse, sfx, musique, autoStopBig, autoStopFs.
 - **Autoplay** avec arrêts conditionnels : `autoStopBig` (stop sur gros gain), `autoStopFs` (stop sur free spins) —
   toggles dans le menu autoplay, persistés et restaurés.
-- **Barre minimaliste à 2 lignes + menu central (☰)** *(maj 2026-06-23)* : objectif utilisateur =
-  garder le moins de boutons possible à l'écran. Barre réduite à :
-  - **Ligne 1** : Buy Bonus.
-  - **Ligne 2** : **ante → SPIN ← menu ☰** (SPIN centré via grille `1fr auto 1fr`).
-  Tout le reste est dans le menu ☰ : **Mise** (− valeur +), **Vitesse** (3 éclairs), **Tours automatiques**
-  (10/25/50/100/∞ + stops Big Win/Free Spins, déroulant), **Sons** (déroulant), **Gains**, **Plein écran** (PC).
-  Menu **aligné à droite** (le bouton ☰ est à droite) ; clics internes ne ferment pas le menu (stopPropagation).
+- **Barre minimaliste empilée + menu central (☰)** *(maj 2026-06-23)* : objectif utilisateur =
+  garder le moins de boutons possible à l'écran. Barre verticale :
+  - **Buy Bonus** en haut (en portrait, remonté ~63dvh, près de la barre dorée du bas de la grille).
+  - **SPIN** (agrandi : 168×92 desktop / 152×84 portrait) juste en dessous.
+  - **menu ☰** en bas (poussé en bas via `margin-top:auto` en portrait).
+  Tout le reste est dans le menu ☰ : **Mise** (− valeur +), **Ante** (ligne rouge, garde `.ante`),
+  **Vitesse** (3 éclairs), **Tours automatiques** (10/25/50/100/∞ + stops, déroulant), **Sons** (déroulant),
+  **Gains**, **Plein écran** (PC). Menu aligné à droite ; clics internes ne ferment pas le menu (un handler
+  `stopPropagation` sur le conteneur `#mainMenu`).
   - **Mise aussi modifiable depuis le panneau d'achat** (sélecteur − valeur + ; change la mise globale).
-  - **Autoplay** : plus de bouton AUTO dédié → on lance depuis le menu ; pour **arrêter**, le bouton **SPIN
-    devient STOP** pendant l'autoplay (reste actif, oxblood). IDs des contrôles préservés (handlers intacts).
+  - **Autoplay** : plus de bouton AUTO dédié → lancé depuis le menu ; pour **arrêter**, le bouton **SPIN
+    devient STOP** pendant l'autoplay (reste actif, oxblood ; `setBusy` adapté). IDs préservés (handlers intacts).
 
 ---
 

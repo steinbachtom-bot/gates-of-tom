@@ -341,6 +341,9 @@
     font-family:"Cinzel Decorative",serif; font-weight:700; letter-spacing:.18em; font-size:17px;
     background:var(--gold-foil); -webkit-background-clip:text; background-clip:text; color:transparent;}
   .spin:hover{filter:brightness(1.08);}
+  /* le SPIN garde son texte transparent (seul le ::after en or martelé s'affiche) :
+     sinon button:hover/focus repasse le vrai texte en doré → "SPIN" en double + état collé sur tactile */
+  .spin:hover,.spin:focus,.spin:active{color:transparent; -webkit-text-fill-color:transparent; border-color:transparent;}
   .spin.spinning{animation:spinpulse .6s infinite;}
   @keyframes spinpulse{0%,100%{box-shadow:0 0 0 2px var(--obsidian),0 0 0 4px var(--gold-2),0 0 22px rgba(201,162,39,.4),inset 0 2px 14px rgba(0,0,0,.7);}
     50%{box-shadow:0 0 0 2px var(--obsidian),0 0 0 4px var(--oxblood-hi),0 0 34px rgba(127,227,210,.4),inset 0 2px 14px rgba(0,0,0,.7);}}

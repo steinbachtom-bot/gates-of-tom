@@ -706,20 +706,12 @@ function winStackEnsure() {
 function winStackPos() {
   if (!winStackEl) return;
   const r = gridEl.getBoundingClientRect();
-  // pile au milieu entre le haut de la grille et la barre dorée du portail (haut du portail ≈ --ft du stage)
-  let topY = r.top - 4;                       // fallback : juste au-dessus de la grille
-  const stage = $("stage");
-  if (stage && typeof getComputedStyle === "function") {
-    const sr = stage.getBoundingClientRect();
-    const ft = parseFloat(getComputedStyle(stage).getPropertyValue("--ft"));
-    if (!isNaN(ft) && sr.height > 0) {
-      const barY = sr.top + sr.height * (ft / 100);   // haut du portail (barre dorée entre les piliers)
-      const mid = (barY + r.top) / 2;
-      if (mid < r.top) topY = mid;             // sécurité : reste au-dessus de la grille
-    }
-  }
+  // posé ENTIÈREMENT au-dessus du bord haut de la grille (dans le gap vers la barre dorée du portail),
+  // pour ne pas recouvrir la 1ère rangée de symboles. La barre dorée est dans l'image de fond (pas de
+  // repère DOM) → on remonte d'une demi-hauteur du bandeau + un petit gap proportionnel à la grille.
+  const wsH = winStackEl.getBoundingClientRect().height || 28;
   winStackEl.style.left = (r.left + r.width / 2) + "px";
-  winStackEl.style.top = topY + "px";
+  winStackEl.style.top = (r.top - wsH * 0.5 - r.height * 0.05) + "px";
 }
 function winStackShow(units) {
   winStackEnsure();

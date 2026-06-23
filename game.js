@@ -896,14 +896,11 @@ async function showBanner(unitWin) {
   winBanner.classList.add("show");
   document.body.classList.add("bigwin-active");   // masque HUD/contrôles pendant la célébration (mobile)
 
-  let onEnded = null;
   const prevTrack = Snd.trackName();
   if (mega) {
     ensureBigWinSrc();                    // source vidéo selon l'orientation (portrait / 16:9)
     Snd.setTrack("bigwin");               // musique dédiée seulement à 100x+
-    bwVideo.loop = false;                 // joue une fois puis se fige sur la frame 0 (décor propre)
-    onEnded = () => { try { bwVideo.pause(); bwVideo.currentTime = 0; } catch (e) { /* ignore */ } };
-    bwVideo.addEventListener("ended", onEnded);
+    bwVideo.loop = false;                 // joue UNE fois, en ENTIER
     try { bwVideo.currentTime = 0; const p = bwVideo.play(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* ignore */ }
   }
 
@@ -927,22 +924,35 @@ async function showBanner(unitWin) {
   bwAmount.textContent = fmt(chips);
   countDone = true;
 
-  // Fin de l'animation (mega) : à la place de la frame figée de la vidéo, on révèle
-  // le décor du jeu SANS la grille de symboles (portail vide) + palier/montant.
-  if (mega) document.body.classList.add("bigwin-reveal");
+  // (mega : la vidéo joue en ENTIER ; le décor « portail vide » se révèle à la FIN de la
+  //  vidéo — géré dans l'attente ci-dessous. Un tap permet de passer.)
 
   // reste affiché jusqu'au tap du joueur (autoplay : referme tout seul pour ne pas bloquer)
   if (bwHint) bwHint.classList.add("show");
   await new Promise((res) => {
-    let iv, autoTimer;
-    const finish = () => { clearInterval(iv); clearTimeout(autoTimer); res(); };
-    iv = setInterval(() => { if (dismiss) finish(); }, 80);
-    if (state.autoActive) autoTimer = setTimeout(finish, mega ? 6000 : 3000);
+    let iv, t1, t2, resolved = false, onVideoEnd = null;
+    const finish = () => {
+      if (resolved) return; resolved = true;
+      clearInterval(iv); clearTimeout(t1); clearTimeout(t2);
+      if (onVideoEnd) bwVideo.removeEventListener("ended", onVideoEnd);
+      res();
+    };
+    iv = setInterval(() => { if (dismiss) finish(); }, 80);   // tap = passer
+    if (mega) {
+      onVideoEnd = () => {
+        try { bwVideo.pause(); } catch (e) { /* ignore */ }
+        document.body.classList.add("bigwin-reveal");          // décor « portail vide » à la fin de la vidéo
+        if (state.autoActive) t1 = setTimeout(finish, 1400);   // autoplay : avance après le reveal
+      };
+      if (bwVideo.ended) onVideoEnd(); else bwVideo.addEventListener("ended", onVideoEnd);
+      if (state.autoActive) t2 = setTimeout(finish, 17000);    // filet de sécurité (vidéo ~15 s)
+    } else if (state.autoActive) {
+      t1 = setTimeout(finish, 3000);
+    }
   });
   if (bwHint) bwHint.classList.remove("show");
 
   winBanner.removeEventListener("click", onTap);
-  if (onEnded) bwVideo.removeEventListener("ended", onEnded);
   winBanner.classList.remove("show", "mega", ...BW_TIER_CLASSES);
   document.body.classList.remove("bigwin-active", "bigwin-reveal");
   try { bwVideo.pause(); } catch (e) { /* ignore */ }

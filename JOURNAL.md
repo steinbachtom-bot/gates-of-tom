@@ -149,10 +149,11 @@ Implémenté via `bigWinTierInfo(u)` (game.js) + classes `.tier-grand/enorme/oly
 
 - **Fermeture du panneau / écran** : reste affiché **jusqu'au tap du joueur** (indice « Appuyez pour continuer »).
   Exception : en **autoplay**, fermeture auto (mega 6 s / non-mega 3 s) pour ne pas bloquer l'enchaînement.
-- **Fin de l'animation mega** *(maj 2026-06-22)* : au lieu de figer la **frame 0** de la vidéo, on révèle le
-  **décor du jeu SANS la grille de symboles** (portail vide) + palier/montant. Via `body.bigwin-reveal` :
-  masque la vidéo + les symboles (la grille n'a pas de fond propre → le portail noir vient de l'image de fond)
-  et allège le voile sombre. Tout est restauré au tap.
+- **Fin de l'animation mega** *(maj 2026-06-23)* : la vidéo joue **en ENTIER** (≈15 s, `loop:false`),
+  le montant défile par-dessus (durée du palier), puis à la **fin de la vidéo** on révèle le **décor SANS la
+  grille** (portail vide) via `body.bigwin-reveal`. **Tap = passer** à tout moment après le décompte. En autoplay,
+  on avance ~1,4 s après le reveau (filet à 17 s). ⚠️ Avant (jusqu'au 2026-06-22) le reveal se déclenchait dès la
+  fin du **décompte** (~2,8 s) → la vidéo de 15 s était coupée à ~3 s ; corrigé en calant le reveal sur la fin réelle de la vidéo.
 - Texte Big Win calé sur le portail (container-query) et **rétréci/resserré** pour ne pas déborder du panneau
   (testé jusqu'à des montants longs type « 250 000,00 »). Clip vidéo choisi : **B (fade)**.
 

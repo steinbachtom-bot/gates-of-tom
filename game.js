@@ -1212,15 +1212,18 @@ mmGains.addEventListener("click", (e) => {
   sndSub.classList.remove("show"); mmSons.classList.remove("open");
   ptOverlay.classList.add("show");
 });
-// « Plein écran » : bascule fullscreen (caché si l'API n'est pas supportée — ex. Safari iPhone)
+// « Plein écran » : RÉSERVÉ AU PC. Masqué sur mobile/tablette (pointeur tactile)
+// et si l'API Fullscreen n'est pas supportée.
 const fsSupported = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+const isDesktop = !!(window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches);
+const fsAvailable = fsSupported && isDesktop;
 const fsActive = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
 function updateFullBtn() {
   if (!mmFull) return;
   mmFull.querySelector("span").textContent = fsActive() ? "Quitter le plein écran" : "Plein écran";
 }
-if (mmFull && !fsSupported) mmFull.style.display = "none";
-if (mmFull && fsSupported) {
+if (mmFull && !fsAvailable) mmFull.style.display = "none";
+if (mmFull && fsAvailable) {
   mmFull.addEventListener("click", (e) => {
     e.stopPropagation();
     Snd.click();

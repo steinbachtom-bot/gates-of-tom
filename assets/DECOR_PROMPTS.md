@@ -72,3 +72,34 @@ Reprendre le prompt 1 en `--ar 9:16`, en précisant :
 
 > Astuce : commence par le **fond de base 16:9**. Dès que tu l'as, envoie-le, je le
 > branche et on juge sur pièce avant de générer les variantes.
+
+---
+
+## 5) Cadre HUD — solde & gains (PNG transparent, horizontal)
+
+But : un **cadre/cartouche** ornementé pour les deux pastilles du haut (Solde à gauche,
+Gain à droite). Centre **vide et sombre** : le libellé + le nombre se posent par-dessus en CSS.
+
+Prompt (ChatGPT / DALL·E 3) :
+
+> Ornate horizontal UI frame for a dark-fantasy slot game HUD, a single small landscape
+> cartouche / plaque. Hammered tarnished gold border with baroque divine ornaments, corroded
+> and slightly cracked, oxblood-red marble inlays in the corners, a faint turquoise spectral
+> glow (ichor) seeping from tiny cracks. The center is an empty, dark, recessed obsidian panel
+> (smooth black, no text, no number) meant to display a value. "Opulence in decay" aesthetic,
+> corrupted Mount Olympus, premium and sombre. Front flat top-down view, perfectly symmetrical,
+> centered, isolated on a fully transparent background, no ground shadow. Game asset, high detail.
+> Color palette: warm black #0A0807, gold #C9A227 and #F9EDB4, oxblood #6B1F2E, ichor teal
+> #7FE3D2, bone marble #E8DEC6. No text, no letters, no numbers, no characters, no logo, no
+> bright neon, no rainbow, no flat clean gold.
+
+Négatif (si SD/Flux) : `text, letters, numbers, watermark, logo, characters, people, bright neon, rainbow, flat clean gold, drop shadow`
+
+Réglages : **PNG transparent**, ratio **~5:2** (horizontal), largeur ≥ 2048 px, centre laissé bien sombre.
+
+**Variante « gains »** (optionnelle) : même cadre, mais la **lueur ichor turquoise** un peu plus
+marquée → la pastille Gain « respire » plus froid que la pastille Solde (dorée). Sinon on génère
+**un seul** cadre et je le réutilise pour les deux (accent or à gauche, ichor à droite, géré en CSS).
+
+Intégration : tu déposes p.ex. `assets/decor/hud_frame.png` (et `hud_frame_gain.png` si variante) ;
+je remplace le fond CSS des `.stat` par le cadre et je recale le texte dedans (responsive inclus).

@@ -1453,6 +1453,21 @@ if (emberLayer) {
   }
 }
 
+// Positionne la barre de commandes SOUS le bas réel de la grille (portrait), de façon
+// fiable quel que soit le navigateur mobile (les barres de Safari faussent les unités dvh).
+const controlsEl = document.querySelector(".controls");
+function positionControls() {
+  if (!controlsEl) return;
+  const portrait = window.matchMedia && window.matchMedia("(orientation:portrait) and (max-width:760px)").matches;
+  if (!portrait || !hasLayout()) { controlsEl.style.top = ""; return; }   // desktop/paysage : flux normal
+  const gb = gridEl.getBoundingClientRect().bottom;
+  const vh = window.innerHeight || document.documentElement.clientHeight;
+  const top = gb + Math.max(0, vh - gb) * 0.14;        // ~14 % de la bande sous la grille
+  controlsEl.style.top = Math.round(top) + "px";
+}
+window.addEventListener("resize", positionControls);
+window.addEventListener("orientationchange", () => setTimeout(positionControls, 200));
+
 dropIn(Array.from({ length: CFG.CELLS }, newCell), false);   // remplissage initial statique (pas d'animation)
 buildPaytable();
 loadSettings();          // réglages sauvegardés (mise, vitesse, sons) — pas le solde
@@ -1462,6 +1477,8 @@ updateSndMenu();
 updateAutoUI();
 updateAutoStops();
 balanceEl.textContent = fmt(state.balance);
+positionControls();
+window.addEventListener("load", () => { positionControls(); setTimeout(positionControls, 600); });
 
 /* ----------------------------------------------------------------------
    Écran de chargement : précharge les images (symboles + décor),

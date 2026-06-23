@@ -46,6 +46,14 @@ for png_rel in ("assets/decor/bg_portrait_fg.png", "assets/decor/win_plaque.png"
             b = base64.b64encode(f.read()).decode("ascii")
         html = html.replace('src="' + png_rel + '"', 'src="data:image/png;base64,' + b + '"')
 
+# Cadre HUD : référencé en CSS url(...) (pas un src=) -> embarqué à part
+hud = os.path.join(ROOT, "assets/decor/hud_frame.png")
+if os.path.exists(hud):
+    with open(hud, "rb") as f:
+        b = base64.b64encode(f.read()).decode("ascii")
+    html = html.replace("url(assets/decor/hud_frame.png)",
+                        "url(data:image/png;base64," + b + ")")
+
 # Favicons (href= dans le <head>)
 for icon_rel in ("assets/icons/icon-32.png", "assets/icons/icon-180.png"):
     icon = os.path.join(ROOT, icon_rel)

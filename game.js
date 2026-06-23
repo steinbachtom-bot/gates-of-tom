@@ -861,7 +861,6 @@ async function runFreeSpins(bought = false, startWin = 0) {
   const setHud = () => {
     $("fsCount").textContent = spins;
     $("fsMult").textContent = "x" + persist;
-    $("fsWin").textContent = fmt(fsWin * bet());
   };
   setHud();
 
@@ -888,9 +887,9 @@ async function runFreeSpins(bought = false, startWin = 0) {
     if (r.multSum > 0) pulsePill($("fsMult"));
     if (w > 0) {
       const to = fsWin * bet();
-      winValEl.textContent = fmt(to); pulseGain();
+      pulseGain();
       gridSparks(Math.min(28, 6 + Math.round(w)), "ichor");
-      await countUpEl($("fsWin"), fsBefore * bet(), to, 450);
+      await countUpEl(winValEl, fsBefore * bet(), to, 450);   // count-up sur le cadre GAIN principal
       await sleep(180);
     }
     if (retrig) { Snd.fsTrigger(); await showStageToast("RETRIGGER", "+" + CFG.FS_RETRIG + " FREE SPINS", 1400); }

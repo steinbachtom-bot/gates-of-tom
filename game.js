@@ -316,10 +316,8 @@ const mmSons = $("mmSons");
 const mmGains = $("mmGains");
 const mmFull = $("mmFull");
 const sndSub = $("sndSub");
-const autoBtn = $("autoBtn");
-const autoMenu = $("autoMenu");
-const autoIco = $("autoIco");
-const autoLbl = $("autoLbl");
+const autoRow = $("autoRow");      // ligne « Tours automatiques » du menu (déroule autoMenu)
+const autoMenu = $("autoMenu");    // sous-section des options d'autoplay (dans le menu)
 const sfxToggle = $("sfxToggle");
 const musToggle = $("musToggle");
 const allToggle = $("allToggle");
@@ -1107,7 +1105,7 @@ async function buyBonus() {
 
 function setBusy(b) {
   state.busy = b;
-  spinBtn.disabled = b;
+  spinBtn.disabled = b && !state.autoActive;   // pendant l'autoplay, SPIN reste actif (= STOP)
   anteBtn.disabled = b;
   buyBtn.disabled = b;
   $("betUp").disabled = $("betDown").disabled = b;
@@ -1125,19 +1123,16 @@ function flashInsufficient() {
    solde insuffisant, ou arrêt manuel.
    ---------------------------------------------------------------------- */
 function updateAutoUI() {
-  autoBtn.classList.toggle("running", state.autoActive);
-  if (state.autoActive) {
-    autoLbl.textContent = state.auto < 0 ? "STOP" : (state.auto + " ▸");
-    autoBtn.title = "Arrêter les tours automatiques";
-  } else {
-    autoLbl.textContent = "AUTO";
-    autoBtn.title = "Tours automatiques";
-  }
+  // pendant l'autoplay, le bouton SPIN devient STOP (et reste cliquable)
+  spinBtn.classList.toggle("autostop", state.autoActive);
+  spinBtn.title = state.autoActive ? "Arrêter les tours automatiques" : "";
+  if (autoRow) autoRow.classList.toggle("running", state.autoActive);
 }
 function stopAuto() {
   state.autoActive = false;
   state.auto = 0;
   updateAutoUI();
+  setBusy(state.busy);   // resynchronise l'état activé/désactivé du bouton SPIN
 }
 async function runAuto() {
   while (state.autoActive && state.auto !== 0) {
@@ -1154,7 +1149,10 @@ async function runAuto() {
 }
 function startAuto(n) {
   if (state.autoActive) return;
+  // ferme le menu (et la sous-section auto)
   autoMenu.classList.remove("show");
+  if (autoRow) autoRow.classList.remove("open");
+  mainMenu.classList.remove("show");
   if (state.balance < round2(spinCost())) { flashInsufficient(); return; }
   state.autoActive = true;
   state.auto = n;                            // -1 = illimité
@@ -1248,6 +1246,15 @@ function updateBet() {
   betValEl.textContent = fmt(spinCost());
   buyCostEl.textContent = fmt(buyCost());
   if (anteCostEl) anteCostEl.textContent = "+" + fmt(bet() * (ANTE_COST_MULT - 1));
+  // sélecteur de mise du panneau d'achat (mise de base + coût d'achat)
+  const bbv = $("buyBetVal"); if (bbv) bbv.textContent = fmt(bet());
+  const bcc = $("buyConfirmCost"); if (bcc) bcc.textContent = fmt(buyCost());
+}
+function changeBet(delta) {
+  if (state.busy) return;
+  Snd.click();
+  state.betIndex = Math.min(BETS.length - 1, Math.max(0, state.betIndex + delta));
+  updateBet(); saveSettings();
 }
 
 function updateSpeed() {
@@ -1256,16 +1263,8 @@ function updateSpeed() {
   speedBtn.classList.toggle("turbo", SPEEDS[state.speedIndex].name === "TURBO");
   speedBtn.title = "Vitesse : " + SPEEDS[state.speedIndex].name;
 }
-$("betUp").addEventListener("click", () => {
-  Snd.click();
-  if (state.busy) return;
-  state.betIndex = Math.min(BETS.length - 1, state.betIndex + 1); updateBet(); saveSettings();
-});
-$("betDown").addEventListener("click", () => {
-  Snd.click();
-  if (state.busy) return;
-  state.betIndex = Math.max(0, state.betIndex - 1); updateBet(); saveSettings();
-});
+$("betUp").addEventListener("click", (e) => { e.stopPropagation(); changeBet(1); });   // dans le menu : ne pas fermer
+$("betDown").addEventListener("click", (e) => { e.stopPropagation(); changeBet(-1); });
 anteBtn.addEventListener("click", () => {
   Snd.click();
   if (state.busy) return;
@@ -1281,9 +1280,12 @@ const buyConfirmCost = $("buyConfirmCost");
 buyBtn.addEventListener("click", () => {
   if (state.busy) return;
   Snd.click();
-  buyConfirmCost.textContent = fmt(buyCost());
+  updateBet();                       // synchronise la mise + le coût affichés dans le panneau
   buyConfirm.classList.add("show");
 });
+// sélecteur de mise dans le panneau d'achat (change la mise globale)
+$("buyBetDown").addEventListener("click", (e) => { e.stopPropagation(); changeBet(-1); });
+$("buyBetUp").addEventListener("click", (e) => { e.stopPropagation(); changeBet(1); });
 buyCancel.addEventListener("click", () => { Snd.click(); buyConfirm.classList.remove("show"); });
 buyConfirmBtn.addEventListener("click", () => { Snd.click(); buyConfirm.classList.remove("show"); buyBonus(); });
 buyConfirm.addEventListener("click", (e) => { if (e.target === buyConfirm) buyConfirm.classList.remove("show"); });
@@ -1297,15 +1299,19 @@ function updateSndMenu() {
   allToggle.classList.toggle("on", sfx || mus);
   menuBtn.classList.toggle("muted", !sfx && !mus);
 }
+function collapseMenuSubs() {   // replie les sous-sections (Sons + Tours auto)
+  sndSub.classList.remove("show"); mmSons.classList.remove("open");
+  autoMenu.classList.remove("show"); if (autoRow) autoRow.classList.remove("open");
+}
 menuBtn.addEventListener("click", (e) => {
   e.stopPropagation();
   kickAudio();
   Snd.click();
   mainMenu.classList.toggle("show");
-  if (!mainMenu.classList.contains("show")) {   // fermeture -> on replie le sous-menu Sons
-    sndSub.classList.remove("show"); mmSons.classList.remove("open");
-  }
+  if (!mainMenu.classList.contains("show")) collapseMenuSubs();
 });
+// clics À L'INTÉRIEUR du menu : ne ferment pas le menu (seul un clic extérieur le ferme)
+mainMenu.addEventListener("click", (e) => e.stopPropagation());
 // « Sons » : déplie/replie les réglages audio (le menu reste ouvert)
 mmSons.addEventListener("click", (e) => {
   e.stopPropagation();
@@ -1368,19 +1374,20 @@ musToggle.addEventListener("click", (e) => {
 });
 document.addEventListener("click", () => {
   mainMenu.classList.remove("show");
-  sndSub.classList.remove("show"); mmSons.classList.remove("open");
+  collapseMenuSubs();
 });
-speedBtn.addEventListener("click", () => {
+speedBtn.addEventListener("click", (e) => {
+  e.stopPropagation();                                         // dans le menu : ne pas fermer
   Snd.click();
   state.speedIndex = (state.speedIndex + 1) % SPEEDS.length;  // modifiable même en free spins
   updateSpeed(); saveSettings();
 });
-autoBtn.addEventListener("click", (e) => {
+// « Tours automatiques » : déplie/replie les options (le menu reste ouvert)
+autoRow.addEventListener("click", (e) => {
   e.stopPropagation();
   Snd.click();
-  if (state.autoActive) { stopAuto(); return; }   // en cours -> stop
-  if (state.busy) return;                          // pas pendant un spin manuel
-  autoMenu.classList.toggle("show");
+  const open = autoMenu.classList.toggle("show");
+  autoRow.classList.toggle("open", open);
 });
 autoMenu.querySelectorAll(".auto-opt").forEach((opt) => {
   opt.addEventListener("click", (e) => {
@@ -1403,11 +1410,15 @@ if (autoStopFsBtn) autoStopFsBtn.addEventListener("click", (e) => {
   e.stopPropagation(); Snd.click();
   state.autoStopFs = !state.autoStopFs; updateAutoStops(); saveSettings();
 });
-document.addEventListener("click", () => { autoMenu.classList.remove("show"); });
 ptClose.addEventListener("click", () => { Snd.click(); ptOverlay.classList.remove("show"); });
 ptOverlay.addEventListener("click", (e) => { if (e.target === ptOverlay) ptOverlay.classList.remove("show"); });
-spinBtn.addEventListener("click", spin);
-document.addEventListener("keydown", (e) => { if (e.code === "Space") { e.preventDefault(); spin(); } });
+// SPIN / Espace : pendant l'autoplay → arrête l'autoplay ; sinon → lance un tour
+function onSpinPress() {
+  if (state.autoActive) { Snd.click(); stopAuto(); return; }
+  spin();
+}
+spinBtn.addEventListener("click", onSpinPress);
+document.addEventListener("keydown", (e) => { if (e.code === "Space") { e.preventDefault(); onSpinPress(); } });
 
 // Démarrage audio au 1er geste (les navigateurs bloquent l'autoplay)
 let audioStarted = false;

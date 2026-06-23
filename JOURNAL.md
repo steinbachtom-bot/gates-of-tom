@@ -168,12 +168,16 @@ Implémenté via `bigWinTierInfo(u)` (game.js) + classes `.tier-grand/enorme/oly
 - **Réglages persistants (localStorage `got_settings`)** : mise, vitesse, sfx, musique, autoStopBig, autoStopFs.
 - **Autoplay** avec arrêts conditionnels : `autoStopBig` (stop sur gros gain), `autoStopFs` (stop sur free spins) —
   toggles dans le menu autoplay, persistés et restaurés.
-- **Menu unique « hamburger » (☰)** *(maj 2026-06-22)* : pour alléger la barre de contrôles, les boutons
-  **Gains** et **Sons** ont été regroupés sous un seul bouton ☰ qui ouvre un menu :
-  - **Sons** → se déplie en place (Tous les sons / Effets / Musique) — IDs des toggles préservés.
-  - **Gains** → ouvre la liste des gains.
-  Le menu est **aligné à gauche** du bouton (pas de débordement en portrait). Barre passée de 8 à 7 éléments.
-  *Objectif affiché par l'utilisateur : garder le moins de boutons possible sur l'écran de jeu.*
+- **Barre minimaliste à 2 lignes + menu central (☰)** *(maj 2026-06-23)* : objectif utilisateur =
+  garder le moins de boutons possible à l'écran. Barre réduite à :
+  - **Ligne 1** : Buy Bonus.
+  - **Ligne 2** : **ante → SPIN ← menu ☰** (SPIN centré via grille `1fr auto 1fr`).
+  Tout le reste est dans le menu ☰ : **Mise** (− valeur +), **Vitesse** (3 éclairs), **Tours automatiques**
+  (10/25/50/100/∞ + stops Big Win/Free Spins, déroulant), **Sons** (déroulant), **Gains**, **Plein écran** (PC).
+  Menu **aligné à droite** (le bouton ☰ est à droite) ; clics internes ne ferment pas le menu (stopPropagation).
+  - **Mise aussi modifiable depuis le panneau d'achat** (sélecteur − valeur + ; change la mise globale).
+  - **Autoplay** : plus de bouton AUTO dédié → on lance depuis le menu ; pour **arrêter**, le bouton **SPIN
+    devient STOP** pendant l'autoplay (reste actif, oxblood). IDs des contrôles préservés (handlers intacts).
 
 ---
 

@@ -335,16 +335,13 @@
   .fs-pill b.pulse{animation:gainPulse .42s ease;}
 
   /* controls */
-  /* barre : ligne 1 = Buy Bonus ; ligne 2 = ante → SPIN ← menu (mise/vitesse/auto sont dans le menu) */
-  .controls{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
-    padding:18px 12px 12px; width:100%; max-width:780px;}
-  .bar-buy{display:flex; align-items:center; justify-content:center;}
-  /* grille 1fr auto 1fr : colonnes latérales égales → le SPIN est pile au centre de la ligne */
-  .bar-main{display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:14px;
-    width:100%; max-width:520px;}
-  .bar-main .ante{justify-self:start;}
-  .bar-main .spin{justify-self:center;}
-  .bar-main .menu-wrap{justify-self:end;}
+  /* barre empilée : Buy Bonus (haut) · SPIN (gros, milieu) · menu ☰ (bas).
+     Mise/Vitesse/Autoplay/Ante sont DANS le menu. */
+  .controls{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+    padding:14px 12px 12px; width:100%; max-width:780px;}
+  .bar-buy,.bar-spin,.bar-menu{display:flex; align-items:center; justify-content:center;}
+  /* ante dans le menu : ligne pleine largeur, garde le rouge (.ante) */
+  .mm-ante{width:100%; height:auto; justify-content:flex-start; gap:9px; padding:10px 12px; border-radius:7px;}
   .betbox{display:flex; align-items:center; gap:6px; background:var(--obsidian-2);
     border:1px solid var(--edge-soft); border-radius:12px; padding:5px 7px;}
   .betbox button{width:32px; height:32px; font-size:18px;}
@@ -359,14 +356,14 @@
   button:active{transform:scale(.92);}
   button:disabled{opacity:.4; cursor:not-allowed;}
 
-  .spin{width:136px; height:74px; border-radius:50%; position:relative;
+  .spin{width:168px; height:92px; border-radius:50%; position:relative;
     background:radial-gradient(circle at 42% 36%, #2a2014, #0a0807 78%);
     border:0; color:transparent;
     box-shadow:0 0 0 2px var(--obsidian), 0 0 0 4px var(--gold-2), 0 0 30px rgba(201,162,39,.34), inset 0 2px 14px rgba(0,0,0,.7);}
   .spin::before{content:""; position:absolute; inset:-4px; border-radius:50%; z-index:-1;
     background:conic-gradient(from 0deg, var(--gold-1),var(--gold-hi),var(--gold-1),var(--gold),var(--gold-hi),var(--gold-1));}
   .spin::after{content:"SPIN"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    font-family:"Cinzel Decorative",serif; font-weight:700; letter-spacing:.18em; font-size:17px;
+    font-family:"Cinzel Decorative",serif; font-weight:700; letter-spacing:.18em; font-size:20px;
     background:var(--gold-foil); -webkit-background-clip:text; background-clip:text; color:transparent;}
   .spin:hover{filter:brightness(1.08);}
   /* le SPIN garde son texte transparent (seul le ::after en or martelé s'affiche) :
@@ -656,8 +653,8 @@
     .stage{border-radius:10px;}
     .stat .val{font-size:18px;}
     .controls{gap:8px; padding:12px 8px 8px;}
-    .spin{width:122px; height:68px;}            /* SPIN agrandi (action principale) */
-    .spin::after{font-size:16px;}
+    .spin{width:152px; height:84px;}            /* SPIN agrandi (action principale) */
+    .spin::after{font-size:18px;}
     .ante,.buy,.info{height:44px;}
     .ante,.buy{padding:0 12px; font-size:11px;}
     .betbox{padding:4px 7px;}
@@ -673,9 +670,8 @@
   }
   @media (max-width:380px){
     .controls{gap:6px;}
-    .spin{width:106px; height:60px;}
-    .spin::after{font-size:14px;}
-    .ante .ante-led{display:none;}
+    .spin{width:132px; height:74px;}
+    .spin::after{font-size:16px;}
   }
   /* Paysage sur écran court (téléphone à l'horizontale) : on compacte le haut
      pour laisser la place de jeu visible sans trop scroller. */
@@ -687,9 +683,9 @@
     .stat{padding:0 18%; max-width:200px;}   /* garde le cadre (texte centré dans le panneau) */
     .stat .val{font-size:16px;}
     .stage{margin-top:5px; max-width:min(1040px, 78vh * 7552 / 4256);}
-    /* paysage court : hauteur précieuse → tout sur une seule rangée (buy, ante, spin, menu) */
-    .controls{flex-direction:row; flex-wrap:wrap; padding:10px 12px 8px; gap:10px;}
-    .bar-buy,.bar-main{display:contents;}
+    /* paysage court : hauteur précieuse → tout sur une seule rangée (buy, spin, menu) */
+    .controls{flex-direction:row; flex-wrap:wrap; align-items:center; padding:10px 12px 8px; gap:12px;}
+    .bar-buy,.bar-spin,.bar-menu{display:contents;}
     .footer-note{padding:4px 16px 14px; font-size:9px;}
   }
 
@@ -725,10 +721,13 @@
       width:auto; z-index:21; margin:0; padding:0 12px;}
     .fs-pill{font-size:10px; padding:5px 12px; letter-spacing:.14em;}
 
-    /* barre de commandes : posée sur la bande de pierre du bas */
-    .controls{position:fixed; left:0; right:0; bottom:0; z-index:20; margin:0; max-width:none;
-      padding:8px 10px calc(10px + env(safe-area-inset-bottom)); gap:8px;
-      background:linear-gradient(to top, rgba(6,4,4,.92), rgba(6,4,4,.5) 55%, transparent);}
+    /* barre de commandes : remontée — Buy près de la barre dorée du bas de la grille (~63dvh),
+       SPIN juste en dessous, menu poussé en bas de l'écran. */
+    .controls{position:fixed; left:0; right:0; top:62dvh; bottom:0; z-index:20; margin:0; max-width:none;
+      justify-content:flex-start; gap:10px;
+      padding:0 10px calc(8px + env(safe-area-inset-bottom));
+      background:linear-gradient(to top, rgba(6,4,4,.85), rgba(6,4,4,.35) 40%, transparent 70%);}
+    .bar-menu{margin-top:auto;}   /* le menu reste en bas de l'écran */
 
     /* pendant le Big Win : la célébration prend tout l'écran, l'UI se retire */
     body.bigwin-active .hudbar,
@@ -830,19 +829,18 @@
   </div>
 
   <div class="controls">
-    <!-- Ligne 1 : Buy Bonus -->
+    <!-- Ligne 1 : Buy Bonus (haut, près de la barre dorée du bas de la grille) -->
     <div class="bar-buy">
       <button class="buy" id="buyBtn" title="Acheter les free spins">
         BUY BONUS<span class="buy-cost" id="buyCost">2 000</span>
       </button>
     </div>
-    <!-- Ligne 2 : ante → SPIN ← menu -->
-    <div class="bar-main">
-      <button class="ante" id="anteBtn" title="Free spins plus fréquents (mise +25 %)">
-        <span class="ante-led"></span>
-        <span class="ante-txt"><b>+ de free spins</b><small id="anteCost">+0,25</small></span>
-      </button>
+    <!-- Ligne 2 : SPIN (gros) -->
+    <div class="bar-spin">
       <button class="spin" id="spinBtn">SPIN</button>
+    </div>
+    <!-- Ligne 3 : menu (ante, mise, vitesse, autoplay, sons… à l'intérieur) -->
+    <div class="bar-menu">
       <div class="menu-wrap">
         <button class="info menubtn" id="menuBtn" title="Menu" aria-label="Menu">
           <span class="menu-ico"><i></i><i></i><i></i></span>
@@ -857,6 +855,11 @@
               <button id="betUp">+</button>
             </span>
           </div>
+          <!-- Ante (garde sa couleur rouge) -->
+          <button class="ante mm-ante" id="anteBtn" title="Free spins plus fréquents (mise +25 %)">
+            <span class="ante-led"></span>
+            <span class="ante-txt"><b>+ de free spins</b><small id="anteCost">+0,25</small></span>
+          </button>
           <!-- Vitesse -->
           <button class="mm-row" id="speedBtn" title="Vitesse des tours">
             <span>Vitesse</span>

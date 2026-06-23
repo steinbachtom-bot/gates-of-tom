@@ -668,20 +668,127 @@ async function revealMultipliers(cells) {
       t.classList.remove("zap");
     }
   }
-  if (sum > 1) await flashMultTotal(sum);
+  // le total ×N s'affiche désormais dans la volute de fumée (presentSpinWin), plus de badge central
   return sum;
 }
 
-/* Crédite un gain (en multiples de la mise) : solde qui défile + étincelles + Big Win. */
+/* Crédite un gain (en multiples de la mise) : solde qui défile + étincelles + Big Win.
+   Le cadre « Gain » est déjà mis à jour par l'envol (presentSpinWin) → on ne le retouche pas ici. */
 async function creditWin(unitWin) {
   if (unitWin <= 0) return;
   const w = round2(unitWin * bet());
   const bal0 = state.balance;
   state.balance = round2(state.balance + w);
-  winValEl.textContent = fmt(w); pulseGain();
   gridSparks(Math.min(34, 8 + Math.round(unitWin)), "gold");
   await countUpEl(balanceEl, bal0, state.balance, 650);
   if (unitWin >= 20) await showBanner(unitWin);
+}
+
+/* ----------------------------------------------------------------------
+   Présentation du gain : montant accumulé au-dessus de la grille, ×multiplicateur
+   dans une volute de fumée, multiplication (défilement de chiffres), puis envol
+   vers le cadre « Gain ». Partagé entre jeu de base et free spins.
+   ---------------------------------------------------------------------- */
+let winStackEl = null, wsAmountEl = null, wsMultEl = null, wsMtextEl = null, wsSmokeEl = null;
+function winStackEnsure() {
+  if (winStackEl) return;
+  winStackEl = document.createElement("div");
+  winStackEl.className = "winstack";
+  winStackEl.innerHTML =
+    '<span class="ws-amount"></span>' +
+    '<span class="ws-mult"><span class="ws-smoke"></span><span class="ws-mtext"></span></span>';
+  document.body.appendChild(winStackEl);
+  wsAmountEl = winStackEl.querySelector(".ws-amount");
+  wsMultEl = winStackEl.querySelector(".ws-mult");
+  wsMtextEl = winStackEl.querySelector(".ws-mtext");
+  wsSmokeEl = winStackEl.querySelector(".ws-smoke");
+}
+function winStackPos() {
+  if (!winStackEl) return;
+  const r = gridEl.getBoundingClientRect();
+  winStackEl.style.left = (r.left + r.width / 2) + "px";
+  winStackEl.style.top = (r.top - 4) + "px";   // juste au-dessus du bord haut de la grille
+}
+function winStackShow(units) {
+  winStackEnsure();
+  winStackEl.classList.remove("fly");
+  wsMultEl.classList.remove("show"); wsMtextEl.textContent = ""; wsSmokeEl.innerHTML = "";
+  winStackEl.style.opacity = ""; winStackEl.style.transform = "translate(-50%,-50%) scale(1)";
+  wsAmountEl.textContent = fmt(units * bet());
+  winStackPos();
+  void winStackEl.offsetWidth;
+  winStackEl.classList.add("show");
+}
+function winStackSet(units) { if (wsAmountEl) wsAmountEl.textContent = fmt(units * bet()); }
+function winStackHide() { if (winStackEl) winStackEl.classList.remove("show", "fly"); }
+function spawnSmoke() {
+  if (!wsSmokeEl) return;
+  wsSmokeEl.innerHTML = "";
+  for (let k = 0; k < 9; k++) {
+    const p = document.createElement("div");
+    p.className = "smoke-p " + (k % 3 === 0 ? "gold" : "warm");
+    const sz = 15 + Math.random() * 17;
+    p.style.width = sz + "px"; p.style.height = sz + "px";
+    const ang = Math.random() * Math.PI * 2;
+    const dist = 5 + Math.random() * 15;            // petite zone (volute serrée)
+    p.style.setProperty("--sdx", Math.cos(ang) * dist + "px");
+    p.style.setProperty("--sdy", (Math.sin(ang) * dist - 12) + "px");
+    p.style.setProperty("--srot", (Math.random() * 130 - 65) + "deg");
+    p.style.setProperty("--sdur", (0.75 + Math.random() * 0.5) + "s");
+    p.style.animationDelay = (k * 0.025) + "s";
+    wsSmokeEl.appendChild(p);
+    const node = p; setTimeout(() => node.remove(), 1500);
+  }
+}
+async function winStackRevealMult(mult) {
+  if (!wsMultEl) return;
+  wsMtextEl.textContent = "×" + mult;
+  spawnSmoke();
+  await sleep(dur(110));
+  wsMultEl.classList.add("show");
+  await sleep(dur(430));
+}
+function gainFrameEl() { return (winValEl.closest && winValEl.closest(".stat")) || winValEl; }
+async function winStackFlyToGain() {
+  if (!winStackEl || !hasLayout()) return;
+  const t = gainFrameEl().getBoundingClientRect();
+  winStackEl.classList.add("fly");
+  void winStackEl.offsetWidth;
+  winStackEl.style.left = (t.left + t.width / 2) + "px";
+  winStackEl.style.top = (t.top + t.height / 2) + "px";
+  winStackEl.style.transform = "translate(-50%,-50%) scale(.32)";
+  winStackEl.style.opacity = "0";
+  await sleep(dur(580));
+  winStackHide();
+}
+/* Joue la présentation complète d'un gain de spin et renvoie le montant (unités) ajouté au cadre.
+   baseUnits : gain des cascades (déjà dans le stack) ; mult : multiplicateur (1 = aucun) ;
+   extraUnits : scatter pay (non multiplié) ; frameBefore : total déjà dans le cadre (FS=cumul, base=0) ;
+   capUnits : plafond du total affiché dans le cadre. */
+async function presentSpinWin(baseUnits, mult, extraUnits, frameBefore, capUnits) {
+  let total = baseUnits;
+  if (!hasLayout()) {
+    if (baseUnits > 0 && mult > 1) total = baseUnits * mult;
+    total += extraUnits;
+    if (capUnits != null && frameBefore + total > capUnits) total = Math.max(0, capUnits - frameBefore);
+    winValEl.textContent = fmt((frameBefore + total) * bet());
+    return total;
+  }
+  winStackEnsure();
+  if (!winStackEl.classList.contains("show")) winStackShow(baseUnits > 0 ? baseUnits : extraUnits);
+  if (baseUnits > 0 && mult > 1) {
+    await winStackRevealMult(mult);
+    total = baseUnits * mult;
+    await countUpEl(wsAmountEl, baseUnits * bet(), total * bet(), dur(680));   // défilement de chiffres
+  }
+  if (extraUnits > 0) {
+    if (baseUnits > 0) { total += extraUnits; winStackSet(total); await sleep(dur(140)); }
+    else { total = extraUnits; }
+  }
+  if (capUnits != null && frameBefore + total > capUnits) { total = Math.max(0, capUnits - frameBefore); winStackSet(total); }
+  await winStackFlyToGain();
+  winValEl.textContent = fmt((frameBefore + total) * bet()); pulseGain();
+  return total;
 }
 
 /* ----------------------------------------------------------------------
@@ -701,11 +808,20 @@ async function animateRound(round, onPartial) {
     Snd.land();
   }
   let i = 0;
+  let prevUnit = 0;
   while (frames[i] && frames[i].winCells.length) {
     unitWin += frames[i].stepWin;
     Snd.win(frames[i].stepWin);
-    popCascadeWin(frames[i].stepWin, i);   // « +X » flottant + étincelles par cascade
-    if (onPartial) { onPartial(unitWin); pulseGain(); }
+    // accumulation du gain dans la pile au-dessus de la grille (additionne les cascades)
+    if (hasLayout()) {
+      if (i === 0) winStackShow(0);
+      winStackPos();
+      const r = gridEl.getBoundingClientRect();
+      sparkBurst(r.left + r.width / 2, r.top - 4, 6 + Math.min(i, 4) * 2, "gold");
+      await countUpEl(wsAmountEl, prevUnit * bet(), unitWin * bet(), dur(240));
+      prevUnit = unitWin;
+    }
+    if (onPartial) onPartial(unitWin);
     await clearWinners(frames[i].winCells);
     if (frames[i + 1]) await tumbleTo(frames[i + 1].cells);
     i++;
@@ -873,25 +989,20 @@ async function runFreeSpins(bought = false, startWin = 0) {
       const fc = r.frames[r.frames.length - 1].cells;
       await revealMultipliers(fc);
     }
-    persist += r.multSum;
-    let w = r.baseWin;
-    if (w > 0) w *= (persist > 0 ? persist : 1);
+    persist += r.multSum;                // multiplicateur PERSISTANT (s'applique à chaque gain)
     const sc = r.scatters;
-    w += scatterPay(sc);
     const fsBefore = fsWin;
-    fsWin += w;
-    if (fsWin > fsCap) { fsWin = fsCap; }
+    // présentation : ×persist dans la fumée → multiplication → envol vers le cadre Gain (cumul des FS)
+    let added = 0;
+    if (r.baseWin > 0 || scatterPay(sc) > 0) {
+      added = await presentSpinWin(r.baseWin, persist > 1 ? persist : 1, scatterPay(sc), fsBefore, fsCap);
+    }
+    fsWin = fsBefore + added;
     const retrig = sc >= 3;
     if (retrig) spins += CFG.FS_RETRIG;
-    setHud();
+    setHud();                            // maj compteur de tours + multiplicateur persistant
     if (r.multSum > 0) pulsePill($("fsMult"));
-    if (w > 0) {
-      const to = fsWin * bet();
-      pulseGain();
-      gridSparks(Math.min(28, 6 + Math.round(w)), "ichor");
-      await countUpEl(winValEl, fsBefore * bet(), to, 450);   // count-up sur le cadre GAIN principal
-      await sleep(180);
-    }
+    if (added > 0) await sleep(dur(150));
     if (retrig) { Snd.fsTrigger(); await showStageToast("RETRIGGER", "+" + CFG.FS_RETRIG + " FREE SPINS", 1400); }
     if (fsWin >= fsCap) break;
   }
@@ -922,25 +1033,20 @@ async function spin() {
   await spinIntro();
 
   const round = generateRound();
-  const res = await animateRound(round, (uw) => {
-    winValEl.textContent = fmt(uw * bet());
-  });
+  const res = await animateRound(round, null);   // le gain s'accumule dans la pile au-dessus de la grille
 
-  // multiplicateurs du jeu de base : révélation des orbes (éclairs + total) puis count-up
-  let unitWin = res.baseWin;
-  if (unitWin > 0 && res.multSum > 0) {
-    const finalCells = round.frames[round.frames.length - 1].cells;
-    await revealMultipliers(finalCells);
-    const before = unitWin * bet();
-    unitWin *= res.multSum;
-    await countUpWin(before, unitWin * bet());
-  }
-  // gains directs scatter
   const sc = res.scatters;
-  unitWin += scatterPay(sc);
-  if (unitWin > CFG.MAX_WIN) unitWin = CFG.MAX_WIN;
+  let unitWin = 0;
+  if (res.baseWin > 0 || scatterPay(sc) > 0) {
+    // révélation des orbes (zap sur la grille) puis présentation : ×mult dans la fumée → multiplication → envol
+    if (res.baseWin > 0 && res.multSum > 0) {
+      await revealMultipliers(round.frames[round.frames.length - 1].cells);
+    }
+    unitWin = await presentSpinWin(res.baseWin, res.multSum > 1 ? res.multSum : 1,
+                                   scatterPay(sc), 0, CFG.MAX_WIN);
+  }
 
-  // crediter (count-up du solde + étincelles proportionnelles au gain)
+  // crediter (count-up du solde + étincelles proportionnelles au gain ; le cadre Gain est déjà à jour)
   await creditWin(unitWin);
 
   // free spins ?

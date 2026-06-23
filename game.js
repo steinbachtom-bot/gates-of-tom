@@ -1462,7 +1462,7 @@ function positionControls() {
   if (!portrait || !hasLayout()) { controlsEl.style.top = ""; return; }   // desktop/paysage : flux normal
   const gb = gridEl.getBoundingClientRect().bottom;
   const vh = window.innerHeight || document.documentElement.clientHeight;
-  const top = gb + Math.max(0, vh - gb) * 0.14;        // ~14 % de la bande sous la grille
+  const top = gb + Math.max(0, vh - gb) * 0.30;        // ~30 % de la bande sous la grille
   controlsEl.style.top = Math.round(top) + "px";
 }
 window.addEventListener("resize", positionControls);

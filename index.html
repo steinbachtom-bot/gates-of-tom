@@ -335,18 +335,16 @@
   .fs-pill b.pulse{animation:gainPulse .42s ease;}
 
   /* controls */
-  /* barre à deux niveaux : bande secondaire (réglages) au-dessus, rangée d'action (Mise/SPIN/Auto) en dessous */
+  /* barre : ligne 1 = Buy Bonus ; ligne 2 = ante → SPIN ← menu (mise/vitesse/auto sont dans le menu) */
   .controls{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
     padding:18px 12px 12px; width:100%; max-width:780px;}
-  .bar-secondary{display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:8px;}
+  .bar-buy{display:flex; align-items:center; justify-content:center;}
   /* grille 1fr auto 1fr : colonnes latérales égales → le SPIN est pile au centre de la ligne */
-  .bar-primary{display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:14px;}
-  .bar-primary .betbox{justify-self:end;}
-  .bar-primary .spin{justify-self:center;}
-  .bar-primary .auto-wrap{justify-self:start;}
-  /* la bande secondaire est plus discrète que la rangée d'action (boutons plus bas, texte resserré) */
-  .bar-secondary .info,.bar-secondary .ante,.bar-secondary .buy{height:40px;}
-  .bar-secondary .ante-txt b{font-size:10px;}
+  .bar-main{display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:14px;
+    width:100%; max-width:520px;}
+  .bar-main .ante{justify-self:start;}
+  .bar-main .spin{justify-self:center;}
+  .bar-main .menu-wrap{justify-self:end;}
   .betbox{display:flex; align-items:center; gap:6px; background:var(--obsidian-2);
     border:1px solid var(--edge-soft); border-radius:12px; padding:5px 7px;}
   .betbox button{width:32px; height:32px; font-size:18px;}
@@ -375,6 +373,9 @@
      sinon button:hover/focus repasse le vrai texte en doré → "SPIN" en double + état collé sur tactile */
   .spin:hover,.spin:focus,.spin:active{color:transparent; -webkit-text-fill-color:transparent; border-color:transparent;}
   .spin.spinning{animation:spinpulse .6s infinite;}
+  /* pendant l'autoplay : le SPIN devient STOP (reste cliquable pour arrêter) */
+  .spin.autostop::after{content:"STOP";}
+  .spin.autostop{box-shadow:0 0 0 2px var(--obsidian), 0 0 0 4px var(--oxblood-hi), 0 0 26px rgba(156,47,63,.5), inset 0 2px 14px rgba(0,0,0,.7);}
   @keyframes spinpulse{0%,100%{box-shadow:0 0 0 2px var(--obsidian),0 0 0 4px var(--gold-2),0 0 22px rgba(201,162,39,.4),inset 0 2px 14px rgba(0,0,0,.7);}
     50%{box-shadow:0 0 0 2px var(--obsidian),0 0 0 4px var(--oxblood-hi),0 0 34px rgba(127,227,210,.4),inset 0 2px 14px rgba(0,0,0,.7);}}
 
@@ -398,15 +399,30 @@
   .menubtn.muted{color:var(--bone-faint); border-color:var(--edge-soft); opacity:.75;}
   .menu-ico{display:flex; flex-direction:column; gap:4px; width:20px;}
   .menu-ico i{display:block; height:2px; border-radius:2px; background:currentColor;}
-  /* aligné à gauche du bouton (le hamburger est le contrôle le plus à gauche) ->
-     le menu s'étend vers la droite et ne déborde pas en portrait mobile. */
-  .main-menu{position:absolute; bottom:calc(100% + 10px); left:0;
-    display:none; flex-direction:column; gap:6px; padding:8px; min-width:178px; z-index:25;
+  /* le bouton menu est le contrôle le plus à DROITE → le menu s'aligne à droite et
+     s'étend vers la gauche (ne déborde pas de l'écran). */
+  .main-menu{position:absolute; bottom:calc(100% + 10px); right:0; left:auto;
+    display:none; flex-direction:column; gap:6px; padding:8px; min-width:208px; z-index:25;
     background:linear-gradient(180deg,#1a140d,#0c070a); border:1px solid var(--edge); border-radius:10px;
     box-shadow:0 14px 34px rgba(0,0,0,.65);}
   .main-menu.show{display:flex;}
-  .main-menu::after{content:""; position:absolute; top:100%; left:22px;
+  .main-menu::after{content:""; position:absolute; top:100%; right:22px;
     border:7px solid transparent; border-top-color:var(--edge);}
+  /* Mise dans le menu : − valeur + */
+  .mm-bet{cursor:default;}
+  .mm-bet:hover{border-color:var(--edge-soft); color:var(--gold-3);}
+  .mm-betctrl{display:inline-flex; align-items:center; gap:8px;}
+  .mm-betctrl button{width:30px; height:30px; font-size:18px;}
+  .mm-betctrl .betval{min-width:56px; text-align:center; font-weight:700; color:var(--gold-3);
+    font-size:15px; font-variant-numeric:tabular-nums; font-family:"Barlow",sans-serif;}
+  /* Vitesse dans le menu : éclairs */
+  .mm-row .spd-bolts{display:inline-flex; align-items:center; gap:3px;}
+  .mm-row .spd-bolt{width:7px; height:18px;}
+  .mm-row.turbo{border-color:var(--gold); color:var(--gold-hi);}
+  .mm-row.turbo .spd-bolt.on{color:var(--gold-hi); filter:drop-shadow(0 0 5px rgba(249,237,180,.65));}
+  /* Tours automatiques : sous-section déroulante */
+  .auto-sub{display:none; flex-direction:column; gap:8px; padding:2px 2px 4px;}
+  .auto-sub.show{display:flex;}
   .mm-row{width:100%; height:auto; display:flex; align-items:center; justify-content:space-between; gap:14px;
     padding:11px 12px; border-radius:7px; background:var(--ash); border:1px solid var(--edge-soft);
     font-family:"Barlow Semi Condensed",sans-serif; text-transform:uppercase; letter-spacing:.14em;
@@ -608,6 +624,10 @@
     background:var(--gold-foil); -webkit-background-clip:text; background-clip:text; color:transparent;}
   .confirm-text{font-family:"Barlow",sans-serif; font-size:14px; color:var(--bone-dim); line-height:1.6; margin:14px 0 20px;}
   .confirm-text b{color:var(--gold-3); font-variant-numeric:tabular-nums;}
+  /* sélecteur de mise dans le panneau d'achat */
+  .confirm-bet{display:flex; align-items:center; justify-content:center; gap:14px; margin-top:16px;
+    font-family:"Barlow Semi Condensed",sans-serif; text-transform:uppercase; letter-spacing:.16em;
+    font-size:12px; color:var(--bone-faint);}
   .confirm-actions{display:flex; gap:12px; justify-content:center;}
   .confirm-no,.confirm-yes{height:auto; width:auto; padding:11px 24px; border-radius:8px;
     font-family:"Barlow Semi Condensed",sans-serif; text-transform:uppercase; letter-spacing:.16em; font-size:13px; font-weight:600;}
@@ -667,9 +687,9 @@
     .stat{padding:0 18%; max-width:200px;}   /* garde le cadre (texte centré dans le panneau) */
     .stat .val{font-size:16px;}
     .stage{margin-top:5px; max-width:min(1040px, 78vh * 7552 / 4256);}
-    /* paysage court : hauteur précieuse → on remet tout sur une seule rangée (annule les 2 niveaux) */
+    /* paysage court : hauteur précieuse → tout sur une seule rangée (buy, ante, spin, menu) */
     .controls{flex-direction:row; flex-wrap:wrap; padding:10px 12px 8px; gap:10px;}
-    .bar-secondary,.bar-primary{display:contents;}
+    .bar-buy,.bar-main{display:contents;}
     .footer-note{padding:4px 16px 14px; font-size:9px;}
   }
 
@@ -810,12 +830,58 @@
   </div>
 
   <div class="controls">
-    <div class="bar-secondary">
+    <!-- Ligne 1 : Buy Bonus -->
+    <div class="bar-buy">
+      <button class="buy" id="buyBtn" title="Acheter les free spins">
+        BUY BONUS<span class="buy-cost" id="buyCost">2 000</span>
+      </button>
+    </div>
+    <!-- Ligne 2 : ante → SPIN ← menu -->
+    <div class="bar-main">
+      <button class="ante" id="anteBtn" title="Free spins plus fréquents (mise +25 %)">
+        <span class="ante-led"></span>
+        <span class="ante-txt"><b>+ de free spins</b><small id="anteCost">+0,25</small></span>
+      </button>
+      <button class="spin" id="spinBtn">SPIN</button>
       <div class="menu-wrap">
         <button class="info menubtn" id="menuBtn" title="Menu" aria-label="Menu">
           <span class="menu-ico"><i></i><i></i><i></i></span>
         </button>
         <div class="main-menu" id="mainMenu">
+          <!-- Mise -->
+          <div class="mm-row mm-bet">
+            <span>Mise</span>
+            <span class="mm-betctrl">
+              <button id="betDown">−</button>
+              <span class="betval" id="betval">20</span>
+              <button id="betUp">+</button>
+            </span>
+          </div>
+          <!-- Vitesse -->
+          <button class="mm-row" id="speedBtn" title="Vitesse des tours">
+            <span>Vitesse</span>
+            <span class="spd-bolts">
+              <svg class="spd-bolt" viewBox="0 0 24 24" preserveAspectRatio="none" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>
+              <svg class="spd-bolt" viewBox="0 0 24 24" preserveAspectRatio="none" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>
+              <svg class="spd-bolt" viewBox="0 0 24 24" preserveAspectRatio="none" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>
+            </span>
+          </button>
+          <!-- Tours automatiques (déroulant) -->
+          <button class="mm-row" id="autoRow"><span>Tours automatiques</span><span class="mm-caret">▾</span></button>
+          <div class="auto-sub" id="autoMenu">
+            <div class="auto-opts">
+              <button class="auto-opt" data-n="10">10</button>
+              <button class="auto-opt" data-n="25">25</button>
+              <button class="auto-opt" data-n="50">50</button>
+              <button class="auto-opt" data-n="100">100</button>
+              <button class="auto-opt" data-n="-1">∞</button>
+            </div>
+            <div class="auto-stops">
+              <button class="snd-row" id="autoStopBig"><span>Stop sur Big Win</span><span class="sw"></span></button>
+              <button class="snd-row" id="autoStopFs"><span>Stop sur Free Spins</span><span class="sw"></span></button>
+            </div>
+          </div>
+          <!-- Sons -->
           <button class="mm-row" id="mmSons"><span>Sons</span><span class="mm-caret">▾</span></button>
           <div class="snd-sub" id="sndSub">
             <button class="snd-row snd-master on" id="allToggle"><span>Tous les sons</span><span class="sw"></span></button>
@@ -823,48 +889,9 @@
             <button class="snd-row on" id="sfxToggle"><span>Effets</span><span class="sw"></span></button>
             <button class="snd-row on" id="musToggle"><span>Musique</span><span class="sw"></span></button>
           </div>
+          <!-- Gains / Plein écran -->
           <button class="mm-row" id="mmGains"><span>Gains</span></button>
           <button class="mm-row" id="mmFull"><span>Plein écran</span><span class="mm-ico">⤢</span></button>
-        </div>
-      </div>
-      <button class="info speedbtn" id="speedBtn" title="Vitesse des tours">
-        <svg class="spd-bolt" viewBox="0 0 24 24" preserveAspectRatio="none" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>
-        <svg class="spd-bolt" viewBox="0 0 24 24" preserveAspectRatio="none" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>
-        <svg class="spd-bolt" viewBox="0 0 24 24" preserveAspectRatio="none" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>
-      </button>
-      <button class="ante" id="anteBtn" title="Free spins plus fréquents (mise +25 %)">
-        <span class="ante-led"></span>
-        <span class="ante-txt"><b>+ de free spins</b><small id="anteCost">+0,25</small></span>
-      </button>
-      <button class="buy" id="buyBtn" title="Acheter les free spins">
-        BUY BONUS<span class="buy-cost" id="buyCost">2 000</span>
-      </button>
-    </div>
-    <div class="bar-primary">
-      <div class="betbox">
-        <button id="betDown">−</button>
-        <div><div class="label">Mise</div><div class="betval" id="betval">20</div></div>
-        <button id="betUp">+</button>
-      </div>
-      <button class="spin" id="spinBtn">SPIN</button>
-      <div class="auto-wrap">
-        <button class="auto" id="autoBtn" title="Tours automatiques">
-          <span class="auto-ico" id="autoIco">A</span>
-          <span class="auto-lbl" id="autoLbl">AUTO</span>
-        </button>
-        <div class="auto-menu" id="autoMenu">
-          <div class="auto-menu-title">Tours automatiques</div>
-          <div class="auto-opts">
-            <button class="auto-opt" data-n="10">10</button>
-            <button class="auto-opt" data-n="25">25</button>
-            <button class="auto-opt" data-n="50">50</button>
-            <button class="auto-opt" data-n="100">100</button>
-            <button class="auto-opt" data-n="-1">∞</button>
-          </div>
-          <div class="auto-stops">
-            <button class="snd-row" id="autoStopBig"><span>Stop sur Big Win</span><span class="sw"></span></button>
-            <button class="snd-row" id="autoStopFs"><span>Stop sur Free Spins</span><span class="sw"></span></button>
-          </div>
         </div>
       </div>
     </div>
@@ -897,7 +924,15 @@
   <div class="confirm-overlay" id="buyConfirm">
     <div class="confirm-panel">
       <div class="confirm-title">Acheter les Free Spins ?</div>
-      <p class="confirm-text">Êtes-vous sûr de vouloir acheter les free spins pour <b id="buyConfirmCost">0</b> jetons ?</p>
+      <div class="confirm-bet">
+        <span>Mise</span>
+        <span class="mm-betctrl">
+          <button id="buyBetDown">−</button>
+          <span class="betval" id="buyBetVal">20</span>
+          <button id="buyBetUp">+</button>
+        </span>
+      </div>
+      <p class="confirm-text">Acheter les free spins pour <b id="buyConfirmCost">0</b> jetons ?</p>
       <div class="confirm-actions">
         <button class="confirm-no" id="buyCancel">Annuler</button>
         <button class="confirm-yes" id="buyConfirmBtn">Confirmer</button>

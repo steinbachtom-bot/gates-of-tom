@@ -302,6 +302,33 @@
   .tile.zap .orb-img{filter:drop-shadow(0 0 26px rgba(199,125,255,1)) drop-shadow(0 0 46px rgba(168,85,247,.9)) drop-shadow(0 4px 7px rgba(0,0,0,.5));}
   .tile.zap .v{color:#fff; text-shadow:0 0 12px rgba(199,125,255,.95);}
   @keyframes orbZap{0%{transform:scale(var(--ms,1));}40%{transform:scale(calc(var(--ms,1) * 1.42));}100%{transform:scale(var(--ms,1));}}
+  /* ---- Pile de gain au-dessus de la grille : montant accumulé + ×mult dans une volute de fumée, puis envol ---- */
+  .winstack{position:fixed; z-index:52; pointer-events:none; display:flex; align-items:center; gap:9px;
+    transform:translate(-50%,-50%); opacity:0; transition:opacity .2s ease;
+    font-family:"Cinzel Decorative",serif; font-weight:700; white-space:nowrap;}
+  .winstack.show{opacity:1;}
+  .winstack.fly{transition:left .58s cubic-bezier(.55,-0.2,.35,1), top .58s cubic-bezier(.55,-0.2,.35,1),
+    transform .58s ease-in, opacity .58s ease-in;}
+  .ws-amount{font-size:clamp(18px,2.5vw,30px); color:var(--gold-hi); font-variant-numeric:tabular-nums;
+    text-shadow:0 2px 0 var(--oxblood-deep), 0 0 16px rgba(201,162,39,.6);}
+  .ws-mult{position:relative; display:inline-flex; align-items:center; justify-content:center;
+    font-size:clamp(15px,2.1vw,26px); opacity:0;}
+  .ws-mult.show{animation:wsMultIn .5s cubic-bezier(.2,1.6,.4,1) forwards;}
+  .ws-mtext{position:relative; z-index:2; background:var(--gold-foil);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 2px 0 var(--oxblood-deep)) drop-shadow(0 0 9px rgba(201,162,39,.8));}
+  @keyframes wsMultIn{0%{opacity:0; transform:scale(.35) rotate(-14deg);}60%{opacity:1;}100%{opacity:1; transform:scale(1) rotate(0);}}
+  /* volute de fumée — localisée derrière le ×mult (petite zone, bien visible) */
+  .ws-smoke{position:absolute; left:50%; top:50%; width:0; height:0; z-index:1;}
+  .smoke-p{position:absolute; left:0; top:0; border-radius:50%; filter:blur(3px);
+    transform:translate(-50%,-50%) scale(.2); opacity:0; animation:smokePuff var(--sdur,.95s) ease-out forwards;}
+  .smoke-p.warm{background:radial-gradient(circle, rgba(124,112,90,.62), rgba(70,58,44,.4) 48%, transparent 72%);}
+  .smoke-p.gold{background:radial-gradient(circle, rgba(201,162,39,.5), rgba(120,90,30,.32) 50%, transparent 74%);}
+  @keyframes smokePuff{
+    0%{opacity:0; transform:translate(-50%,-50%) scale(.2) rotate(0deg);}
+    22%{opacity:.92;}
+    100%{opacity:0; transform:translate(calc(-50% + var(--sdx,0)), calc(-50% + var(--sdy,-12px))) scale(1.7) rotate(var(--srot,45deg));}
+  }
   /* pulsation de la valeur GAIN à chaque crédit */
   .stat.win .val.pulse{animation:gainPulse .42s ease;}
   @keyframes gainPulse{0%{transform:scale(1);}40%{transform:scale(1.16); color:var(--gold-hi);}100%{transform:scale(1);}}

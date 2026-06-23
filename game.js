@@ -314,6 +314,7 @@ const menuBtn = $("menuBtn");      // hamburger : regroupe Sons + Gains
 const mainMenu = $("mainMenu");
 const mmSons = $("mmSons");
 const mmGains = $("mmGains");
+const mmFull = $("mmFull");
 const sndSub = $("sndSub");
 const autoBtn = $("autoBtn");
 const autoMenu = $("autoMenu");
@@ -1211,6 +1212,33 @@ mmGains.addEventListener("click", (e) => {
   sndSub.classList.remove("show"); mmSons.classList.remove("open");
   ptOverlay.classList.add("show");
 });
+// « Plein écran » : bascule fullscreen (caché si l'API n'est pas supportée — ex. Safari iPhone)
+const fsSupported = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+const fsActive = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+function updateFullBtn() {
+  if (!mmFull) return;
+  mmFull.querySelector("span").textContent = fsActive() ? "Quitter le plein écran" : "Plein écran";
+}
+if (mmFull && !fsSupported) mmFull.style.display = "none";
+if (mmFull && fsSupported) {
+  mmFull.addEventListener("click", (e) => {
+    e.stopPropagation();
+    Snd.click();
+    mainMenu.classList.remove("show");
+    sndSub.classList.remove("show"); mmSons.classList.remove("open");
+    try {
+      if (fsActive()) {
+        (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      } else {
+        const el = document.documentElement;
+        (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+      }
+    } catch (err) { /* refus navigateur : on ignore */ }
+  });
+  document.addEventListener("fullscreenchange", updateFullBtn);
+  document.addEventListener("webkitfullscreenchange", updateFullBtn);
+  updateFullBtn();
+}
 allToggle.addEventListener("click", (e) => {
   e.stopPropagation();
   kickAudio();

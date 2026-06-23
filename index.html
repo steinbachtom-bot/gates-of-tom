@@ -155,11 +155,14 @@
 
   .hudbar{display:flex; justify-content:space-between; gap:12px; width:100%; max-width:1040px;
     margin:8px auto 0; padding:0 6px;}
-  .stat{flex:1; background:linear-gradient(180deg,var(--obsidian-2),var(--obsidian));
-    border:1px solid var(--edge-soft); border-radius:10px; padding:9px 14px;}
+  /* cadre HUD (PNG détouré, or martelé/oxblood/ichor) : le texte se pose dans le panneau sombre central */
+  .stat{flex:0 1 230px; max-width:230px; aspect-ratio:1672 / 941;
+    background:url(assets/decor/hud_frame.png) center/100% 100% no-repeat;
+    border:0; border-radius:0; padding:0 19% 0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;}
   .stat .label{font-family:"Barlow Semi Condensed",sans-serif; text-transform:uppercase;
     letter-spacing:.22em; font-size:10px; color:var(--bone-faint);}
-  .stat .val{font-size:22px; font-weight:700; color:var(--gold-3); font-variant-numeric:tabular-nums;}
+  .stat .val{font-size:20px; font-weight:700; color:var(--gold-3); font-variant-numeric:tabular-nums; white-space:nowrap;}
   .stat.win .val{color:var(--ichor);}
 
   /* Scène : l'image-décor + la grille posée dans le portail central */
@@ -634,7 +637,7 @@
     .logo{font-size:clamp(20px,4.5vh,32px);}
     .subtitle{font-size:clamp(11px,2.4vh,16px); margin-top:2px;}
     .hudbar{margin-top:4px;}
-    .stat{padding:5px 12px;}
+    .stat{padding:0 18%; max-width:200px;}   /* garde le cadre (texte centré dans le panneau) */
     .stat .val{font-size:16px;}
     .stage{margin-top:5px; max-width:min(1040px, 78vh * 7552 / 4256);}
     /* paysage court : hauteur précieuse → on remet tout sur une seule rangée (annule les 2 niveaux) */
@@ -663,9 +666,9 @@
     .hudbar{position:fixed; top:0; left:0; right:0; z-index:20; margin:0; max-width:none;
       padding:calc(6px + env(safe-area-inset-top)) 12px 0; gap:8px;
       justify-content:space-between; pointer-events:none;}
-    .stat{flex:0 0 auto; min-width:40vw; background:rgba(8,6,5,.5);
-      border:1px solid var(--edge-soft); border-radius:10px; padding:5px 12px;
-      -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px);}
+    /* cadre HUD : on garde le PNG détouré (pas la pastille glass) */
+    .stat{flex:0 0 auto; width:44vw; max-width:240px; min-width:0; aspect-ratio:1672 / 941;
+      padding:0 19%;}
     .stat .label{font-size:9px;}
     .stat .val{font-size:17px;}
 

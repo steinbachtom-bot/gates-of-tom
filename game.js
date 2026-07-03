@@ -8,8 +8,8 @@
    ====================================================================== */
 const Snd = (() => {
   const AC = (typeof window !== "undefined") && (window.AudioContext || window.webkitAudioContext);
-  let ctx = null, master = null, sfxG = null, musicG = null, fileMusicG = null;
-  let sfxMuted = false, musicMuted = false, musicOn = false, musicTimer = null, droneNodes = [];
+  let ctx = null, master = null, sfxG = null, fileMusicG = null;
+  let sfxMuted = false, musicMuted = false, musicOn = false, musicTimer = null;
   let clickBuf = null, whooshBuf = null, hitBuf = null, landBuf = null, scatterBuf = null, fsTrigBuf = null, orbZapBuf = null, bigWinBuf = null, musicBuf = null, fsMusicBuf = null, bigMusicBuf = null;
   let musicTrack = "base", activeMusic = [];
   const MUSIC_VOL = 0.4, XF = 1.8;   // volume musique (lit ~-23 dBFS), durée du crossfade (s)
@@ -97,7 +97,6 @@ const Snd = (() => {
       ctx = new AC();
       master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
       sfxG = ctx.createGain(); sfxG.gain.value = sfxMuted ? 0 : 1.0; sfxG.connect(master);
-      musicG = ctx.createGain(); musicG.gain.value = 0.0; musicG.connect(master);
       fileMusicG = ctx.createGain(); fileMusicG.gain.value = 0.0; fileMusicG.connect(master);
       loadClick();
     }
@@ -135,58 +134,6 @@ const Snd = (() => {
     src.start(t0); src.stop(t0 + dur + 0.02);
   }
 
-  // Progression sombre et ancienne (Ré phrygien) : Dm – Mi♭ – Dm – Do
-  const CHORDS = [
-    { pad: [146.83, 174.61, 220.00], bass: 73.42 },  // Dm
-    { pad: [155.56, 196.00, 233.08], bass: 77.78 },  // Eb (bII phrygien)
-    { pad: [146.83, 174.61, 220.00], bass: 73.42 },  // Dm
-    { pad: [130.81, 164.81, 196.00], bass: 65.41 },  // C (bVII)
-  ];
-  // Mélodie modale (Ré phrygien : D Eb F G A Bb C) — flûte ancienne clairsemée
-  const MEL = [174.61, 196.00, 220.00, 233.08, 261.63, 293.66, 311.13];
-  let barIdx = 0;
-
-  function mPad(freq, t0, dur, gain) {
-    const o = ctx.createOscillator(); o.type = "triangle"; o.frequency.value = freq;
-    const o2 = ctx.createOscillator(); o2.type = "sawtooth"; o2.frequency.value = freq * 1.004;
-    const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.Q.value = 0.7;
-    lp.frequency.setValueAtTime(280, t0); lp.frequency.linearRampToValueAtTime(620, t0 + dur * 0.5);
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(gain, t0 + 0.9);
-    g.gain.setValueAtTime(gain, t0 + dur * 0.6);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    o.connect(lp); o2.connect(lp); lp.connect(g).connect(musicG);
-    const sg = ctx.createGain(); sg.gain.value = 0.4; o2.disconnect(); o2.connect(sg).connect(lp);
-    o.start(t0); o2.start(t0); o.stop(t0 + dur + 0.05); o2.stop(t0 + dur + 0.05);
-  }
-  function mBass(freq, t0, dur) {
-    const o = ctx.createOscillator(); o.type = "triangle"; o.frequency.value = freq;
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(0.15, t0 + 0.1);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    o.connect(g).connect(musicG); o.start(t0); o.stop(t0 + dur + 0.05);
-  }
-  function mDrum(t0, gain) {            // tambour de guerre profond
-    const o = ctx.createOscillator(); o.type = "sine";
-    o.frequency.setValueAtTime(110, t0); o.frequency.exponentialRampToValueAtTime(34, t0 + 0.22);
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(gain, t0 + 0.012);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.34);
-    o.connect(g).connect(musicG); o.start(t0); o.stop(t0 + 0.38);
-  }
-  function mMel(freq, t0, dur) {        // flûte ancienne (muffled)
-    const o = ctx.createOscillator(); o.type = "sine"; o.frequency.value = freq;
-    const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1300;
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(0.05, t0 + 0.18);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    o.connect(lp).connect(g).connect(musicG); o.start(t0); o.stop(t0 + dur + 0.05);
-  }
-
   // Musique = vraie piste audio (fichier). Pas de musique synthé (trop "arcade").
   function startMusic() {
     if (!ensure() || musicOn) return;
@@ -214,10 +161,8 @@ const Snd = (() => {
     spin() { if (!ensure()) return; if (whooshBuf) { playBuf(whooshBuf, 0.45); return; } const t = now(); noise(t, 0.34, { gain: 0.16, freq: 950, type: "lowpass" }); tone(200, t, 0.16, { type: "sawtooth", gain: 0.05, to: 110 }); },
     land() { if (!ensure()) return; if (landBuf) { playBuf(landBuf, 0.3); return; } const t = now(); tone(150, t, 0.07, { type: "sine", gain: 0.10, to: 80 }); },
     pop() { if (!ensure()) return; const t = now(); noise(t, 0.16, { gain: 0.13, freq: 1700, type: "bandpass", q: 0.8 }); },
-    orb() { if (!ensure()) return; const t = now(); tone(880, t, 0.2, { type: "triangle", gain: 0.11, to: 1320 }); tone(1320, t + 0.05, 0.2, { type: "sine", gain: 0.07, to: 1760 }); },
     win(mult) { if (!ensure()) return; if (hitBuf) { playBuf(hitBuf, 1.1); return; } const t = now(); const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5]; const n = Math.max(1, Math.min(notes.length, 1 + Math.floor((mult || 0) / 2))); for (let i = 0; i < n; i++) tone(notes[i], t + i * 0.07, 0.2, { type: "triangle", gain: 0.13 }); },
     scatter() { if (!ensure()) return; if (scatterBuf) { playBuf(scatterBuf, 0.4); return; } const t = now(); tone(660, t, 0.5, { type: "sine", gain: 0.15, to: 990 }); noise(t, 0.5, { gain: 0.05, freq: 700, type: "bandpass", q: 2 }); },
-    anticip() { if (!ensure()) return; const t = now(); tone(220, t, 1.1, { type: "sawtooth", gain: 0.12, to: 660 }); tone(110, t, 1.1, { type: "sine", gain: 0.10, to: 220 }); noise(t, 1.1, { gain: 0.04, freq: 900, type: "bandpass", q: 3 }); },
     orbZap(i) { if (!ensure()) return; if (orbZapBuf) { playBuf(orbZapBuf, 0.25, 1 + Math.min(i || 0, 6) * 0.05); return; } const t = now(); const base = 520 + (i || 0) * 80; tone(base, t, 0.18, { type: "sawtooth", gain: 0.10, to: base * 2 }); tone(base * 1.5, t + 0.02, 0.16, { type: "triangle", gain: 0.06, to: base * 3 }); noise(t, 0.12, { gain: 0.05, freq: 3200, type: "highpass" }); },
     fsTrigger() { if (!ensure()) return; if (fsTrigBuf) { playBuf(fsTrigBuf, 0.55); return; } const t = now(); [392, 523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, t + i * 0.13, 0.55, { type: "sawtooth", gain: 0.12 })); tone(98, t, 1.3, { type: "sine", gain: 0.16, to: 196 }); },
     bigWin() { if (!ensure()) return; if (bigWinBuf) { playBuf(bigWinBuf, 0.72); return; } const t = now(); [523.25, 659.25, 783.99, 1046.5, 1318.5, 1568].forEach((f, i) => tone(f, t + i * 0.09, 0.42, { type: "triangle", gain: 0.15 })); },
@@ -331,6 +276,9 @@ const SYM_NAME = {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const round2 = (n) => Math.round(n * 100) / 100;
+// Tolérance flottante pour les comparaisons de gains en unités de mise (le clamp du cap
+// combiné introduit ~1 ulp d'erreur : sans epsilon, « fsWin >= fsCap » peut rater le cap).
+const FLOAT_EPS = 1e-9;
 const fmt = (n) => round2(n).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const bet = () => BETS[state.betIndex];
 const spinCost = () => bet() * (state.ante ? ANTE_COST_MULT : 1);
@@ -367,7 +315,7 @@ const PREMIUM_KEYS = { crown: 1, hourglass: 1, ring: 1, chalice: 1 };
 function makeTile(cell) {
   const el = document.createElement("div");
   const tier = PREMIUM_KEYS[cell.t] ? " premium" : (cell.t.indexOf("gem_") === 0 ? " gem" : "");
-  el.className = "tile" + (cell.t === "SCATTER" ? " scatter" : "") + (cell.t === "MULT" ? " mult" : "") + tier;
+  el.className = "tile" + (cell.t === "SCATTER" ? " scatter" : "") + tier;   // (le style des orbes passe par .mult-orb)
   el.innerHTML = symbolInner(cell);
   return el;
 }
@@ -535,13 +483,6 @@ function puffSmoke(tileEl) {
   }
 }
 
-/* Indices des scatters présents dans une grille de cellules. */
-function scatterIndices(cells) {
-  const out = [];
-  cells.forEach((c, i) => { if (c.t === "SCATTER") out.push(i); });
-  return out;
-}
-
 /* L'anticipation de rouleaux est désormais gérée pendant la descente (voir dropIn) :
    pulsation des scatters affichés + pause des colonnes pas encore tombées. */
 
@@ -582,7 +523,7 @@ function pulsePill(el) {
   if (!hasLayout() || !el) return;
   el.classList.remove("pulse"); void el.offsetWidth; el.classList.add("pulse");
 }
-async function countUpWin(from, to) { pulseGain(); await countUpEl(winValEl, from, to, 500); }
+
 
 // Gerbe d'étincelles dorées (ou ichor) à une position écran.
 function sparkBurst(cx, cy, n, kind) {
@@ -603,45 +544,11 @@ function sparkBurst(cx, cy, n, kind) {
     const node = s; setTimeout(() => node.remove(), 1100);
   }
 }
-// Montant « +X » flottant qui monte et s'estompe.
-function floatWin(cx, cy, text, big) {
-  const layer = getFxLayer();
-  if (!hasLayout() || !layer) return;
-  const p = document.createElement("div");
-  p.className = "winpop" + (big ? " big" : "");
-  p.textContent = text;
-  p.style.left = cx + "px"; p.style.top = cy + "px";
-  layer.appendChild(p);
-  const node = p; setTimeout(() => node.remove(), 1300);
-}
-// Étincelles au centre de la grille.
+// Étincelles au centre de la grille (utilisé par creditWin / runFreeSpins).
 function gridSparks(n, kind) {
   if (!hasLayout()) return;
   const r = gridEl.getBoundingClientRect();
   sparkBurst(r.left + r.width / 2, r.top + r.height / 2, n, kind);
-}
-// Popup de gain d'une cascade, au centre de la grille (décalé selon la cascade).
-function popCascadeWin(stepWin, cascadeIdx) {
-  if (!hasLayout() || stepWin <= 0) return;
-  const r = gridEl.getBoundingClientRect();
-  const cx = r.left + r.width / 2;
-  const cy = r.top + r.height * (0.52 - Math.min(cascadeIdx, 3) * 0.05);
-  floatWin(cx, cy, "+" + fmt(stepWin * bet()), cascadeIdx > 0);
-  sparkBurst(cx, cy, 7 + Math.min(cascadeIdx, 4) * 3, "gold");
-}
-
-// Badge « xN » spectaculaire au centre de la zone de jeu.
-async function flashMultTotal(sum) {
-  const stage = $("stage");
-  if (!hasLayout() || !stage) return;
-  const el = document.createElement("div");
-  el.className = "mult-flash";
-  el.textContent = "x" + sum;
-  stage.appendChild(el);
-  await sleep(dur(640));
-  el.classList.add("out");
-  await sleep(dur(300));
-  el.remove();
 }
 
 /* Révélation des orbes : chaque orbe « zappe » (éclair + son montant + étincelles),
@@ -677,6 +584,7 @@ async function creditWin(unitWin) {
   const w = round2(unitWin * bet());
   const bal0 = state.balance;
   state.balance = round2(state.balance + w);
+  saveSettings();                      // persiste le solde après crédit
   gridSparks(Math.min(34, 8 + Math.round(unitWin)), "gold");
   await countUpEl(balanceEl, bal0, state.balance, 650);
   if (unitWin >= 20) await showBanner(unitWin);
@@ -714,6 +622,7 @@ function winStackPos() {
 function winStackShow(units) {
   winStackEnsure();
   winStackEl.classList.remove("fly");
+  winStackEl.style.transitionDuration = "";   // reset (l'envol la règle selon la vitesse de jeu)
   wsMultEl.classList.remove("show"); wsMtextEl.textContent = ""; wsSmokeEl.innerHTML = "";
   winStackEl.style.opacity = ""; winStackEl.style.transform = "translate(-50%,-50%) scale(1)";
   wsAmountEl.textContent = fmt(units * bet());
@@ -755,6 +664,7 @@ async function winStackFlyToGain() {
   if (!winStackEl || !hasLayout()) return;
   const t = gainFrameEl().getBoundingClientRect();
   winStackEl.classList.add("fly");
+  winStackEl.style.transitionDuration = dur(580) + "ms";   // l'envol suit la vitesse de jeu (le CSS est fixe)
   void winStackEl.offsetWidth;
   winStackEl.style.left = (t.left + t.width / 2) + "px";
   winStackEl.style.top = (t.top + t.height / 2) + "px";
@@ -788,6 +698,7 @@ async function presentSpinWin(baseUnits, mult, extraUnits, frameBefore, capUnits
     else { total = extraUnits; }
   }
   if (capUnits != null && frameBefore + total > capUnits) { total = Math.max(0, capUnits - frameBefore); winStackSet(total); }
+  if (total <= FLOAT_EPS) { winStackHide(); return 0; }   // cap déjà atteint : rien à ajouter, pas d'envol « 0,00 » (epsilon : poussière flottante)
   await winStackFlyToGain();
   winValEl.textContent = fmt((frameBefore + total) * bet()); pulseGain();
   return total;
@@ -796,7 +707,7 @@ async function presentSpinWin(baseUnits, mult, extraUnits, frameBefore, capUnits
 /* ----------------------------------------------------------------------
    Animation d'un round (descente + cascades)
    ---------------------------------------------------------------------- */
-async function animateRound(round, onPartial) {
+async function animateRound(round) {
   const frames = round.frames;
   let unitWin = 0;
   Snd.spin();
@@ -823,7 +734,6 @@ async function animateRound(round, onPartial) {
       await countUpEl(wsAmountEl, prevUnit * bet(), unitWin * bet(), dur(240));
       prevUnit = unitWin;
     }
-    if (onPartial) onPartial(unitWin);
     await clearWinners(frames[i].winCells);
     if (frames[i + 1]) await tumbleTo(frames[i + 1].cells);
     i++;
@@ -831,7 +741,6 @@ async function animateRound(round, onPartial) {
   return { baseWin: unitWin, multSum: round.multSum, scatters: round.scatters };
 }
 
-async function spinIntro() { /* la descente est geree par animateRound/dropIn */ }
 
 /* ----------------------------------------------------------------------
    Écran Big Win : vidéo en fond + libellé de palier + montant qui défile
@@ -992,10 +901,11 @@ async function runFreeSpins(bought = false, startWin = 0) {
   };
   setHud();
 
+  try {
   while (spins > 0) {
     spins--;
     const r = generateRound();
-    await animateRound(r, null);
+    await animateRound(r);
     // révélation des orbes du tour (ils s'ajoutent au multiplicateur persistant)
     if (r.multSum > 0) {
       const fc = r.frames[r.frames.length - 1].cells;
@@ -1004,82 +914,97 @@ async function runFreeSpins(bought = false, startWin = 0) {
     persist += r.multSum;                // multiplicateur PERSISTANT (s'applique à chaque gain)
     const sc = r.scatters;
     const fsBefore = fsWin;
-    // présentation : ×persist dans la fumée → multiplication → envol vers le cadre Gain (cumul des FS)
+    // présentation : ×persist dans la fumée → multiplication → envol vers le cadre Gain.
+    // Le cadre affiche le CUMUL du pari (gain de base déclencheur + free spins), plafonné à MAX_WIN :
+    // au max win, le joueur voit bien 5000× (et le gain de base n'est plus écrasé par le cumul FS seul).
     let added = 0;
     if (r.baseWin > 0 || scatterPay(sc) > 0) {
-      added = await presentSpinWin(r.baseWin, persist > 1 ? persist : 1, scatterPay(sc), fsBefore, fsCap);
+      added = await presentSpinWin(r.baseWin, persist > 1 ? persist : 1, scatterPay(sc),
+                                   startWin + fsBefore, CFG.MAX_WIN);
     }
     fsWin = fsBefore + added;
-    const retrig = sc >= 3;
+    const capped = fsWin >= fsCap - FLOAT_EPS;   // plafond combiné atteint (epsilon : 1 ulp d'arrondi ne doit pas relancer la session)
+    const retrig = sc >= 3 && !capped;   // pas de « RETRIGGER +5 » annoncé puis jamais joué
     if (retrig) spins += CFG.FS_RETRIG;
     setHud();                            // maj compteur de tours + multiplicateur persistant
     if (r.multSum > 0) pulsePill($("fsMult"));
     if (added > 0) await sleep(dur(150));
     if (retrig) { Snd.fsTrigger(); await showStageToast("RETRIGGER", "+" + CFG.FS_RETRIG + " FREE SPINS", 1400); }
-    if (fsWin >= fsCap) break;
+    if (capped) break;
   }
 
-  state.inFs = false;      // sortie des free spins : anticip revient au seuil de base (3)
-  setAnte(savedAnte);      // restaure le réglage ante du joueur
-  fsHud.classList.remove("show");
   await showStageToast("TOURS GRATUITS TERMINÉS", fmt(fsWin * bet()) + " jetons", 2400);
-  Snd.baseMusic();                      // retour à la musique de base
+  } finally {
+    // restauré sur TOUS les chemins (exception comprise) : anticip, ante, HUD, musique
+    state.inFs = false;      // sortie des free spins : anticip revient au seuil de base (3)
+    setAnte(savedAnte);      // restaure le réglage ante du joueur
+    fsHud.classList.remove("show");
+    Snd.baseMusic();         // retour à la musique de base
+  }
   return fsWin;
 }
 
 /* ----------------------------------------------------------------------
    Spin principal
    ---------------------------------------------------------------------- */
+/* Retourne true si le tour a été joué, false s'il a été refusé (occupé / solde insuffisant).
+   L'autoplay s'en sert pour ne pas consommer un tour sur un spin avorté. */
 async function spin() {
-  if (state.busy) return;
-  if (state.balance < round2(spinCost())) { flashInsufficient(); return; }
+  if (state.busy) return false;
+  if (state.balance < round2(spinCost())) { flashInsufficient(); return false; }
   setBusy(true);
   spinBtn.classList.add("spinning");
   state.lastBigWin = false; state.lastFs = false;   // drapeaux pour l'autoplay
+  try {
+    setAnte(state.ante);                // synchronise le moteur
+    state.balance = round2(state.balance - round2(spinCost()));
+    balanceEl.textContent = fmt(state.balance);
+    saveSettings();                     // persiste le solde après débit
+    winValEl.textContent = fmt(0);
 
-  setAnte(state.ante);                // synchronise le moteur
-  state.balance = round2(state.balance - round2(spinCost()));
-  balanceEl.textContent = fmt(state.balance);
-  winValEl.textContent = fmt(0);
+    const round = generateRound();
+    const res = await animateRound(round);   // le gain s'accumule dans la pile au-dessus de la grille
 
-  await spinIntro();
-
-  const round = generateRound();
-  const res = await animateRound(round, null);   // le gain s'accumule dans la pile au-dessus de la grille
-
-  const sc = res.scatters;
-  let unitWin = 0;
-  if (res.baseWin > 0 || scatterPay(sc) > 0) {
-    // révélation des orbes (zap sur la grille) puis présentation : ×mult dans la fumée → multiplication → envol
-    if (res.baseWin > 0 && res.multSum > 0) {
-      await revealMultipliers(round.frames[round.frames.length - 1].cells);
+    const sc = res.scatters;
+    let unitWin = 0;
+    if (res.baseWin > 0 || scatterPay(sc) > 0) {
+      // révélation des orbes (zap sur la grille) puis présentation : ×mult dans la fumée → multiplication → envol
+      if (res.baseWin > 0 && res.multSum > 0) {
+        await revealMultipliers(round.frames[round.frames.length - 1].cells);
+      }
+      unitWin = await presentSpinWin(res.baseWin, res.multSum > 1 ? res.multSum : 1,
+                                     scatterPay(sc), 0, CFG.MAX_WIN);
     }
-    unitWin = await presentSpinWin(res.baseWin, res.multSum > 1 ? res.multSum : 1,
-                                   scatterPay(sc), 0, CFG.MAX_WIN);
+
+    // crediter (count-up du solde + étincelles proportionnelles au gain ; le cadre Gain est déjà à jour)
+    await creditWin(unitWin);
+
+    // free spins ?
+    if (sc >= CFG.TRIGGER) {
+      state.lastFs = true;
+      const fsUnit = await runFreeSpins(false, unitWin);   // plafond combiné base+FS
+      await creditWin(fsUnit);
+    }
+    return true;
+  } finally {
+    // même en cas d'exception imprévue, le jeu ne reste jamais figé en « busy »
+    spinBtn.classList.remove("spinning");
+    winStackHide();
+    setBusy(false);
   }
-
-  // crediter (count-up du solde + étincelles proportionnelles au gain ; le cadre Gain est déjà à jour)
-  await creditWin(unitWin);
-
-  // free spins ?
-  if (sc >= CFG.TRIGGER) {
-    state.lastFs = true;
-    const fsUnit = await runFreeSpins(false, unitWin);   // plafond combiné base+FS
-    await creditWin(fsUnit);
-  }
-
-  spinBtn.classList.remove("spinning");
-  setBusy(false);
 }
 
-/* Grille de déclenchement : symboles aléatoires + exactement 4 scatters. */
+/* Grille de déclenchement (cosmétique, achat) : tirage pondéré SANS scatter, puis exactement
+   4 scatters posés dans 4 colonnes DISTINCTES (cohérent avec la règle max 1 scatter/colonne). */
 function makeTriggerGrid() {
-  const cells = Array.from({ length: CFG.CELLS }, () => ({
-    t: PAY_KEYS[Math.floor(Math.random() * PAY_KEYS.length)], v: 0,
-  }));
-  const pos = new Set();
-  while (pos.size < CFG.TRIGGER) pos.add(Math.floor(Math.random() * CFG.CELLS));
-  pos.forEach((i) => { cells[i] = { t: "SCATTER", v: 0 }; });
+  const cells = Array.from({ length: CFG.CELLS }, () => newCellNoScatter());
+  const cols = [...Array(CFG.REELS).keys()];
+  for (let k = 0; k < CFG.TRIGGER; k++) {                     // 4 colonnes distinctes au hasard
+    const j = k + Math.floor(Math.random() * (cols.length - k));
+    [cols[k], cols[j]] = [cols[j], cols[k]];
+    const r = Math.floor(Math.random() * CFG.ROWS);
+    cells[idx(cols[k], r)] = { t: "SCATTER", v: 0 };
+  }
   return cells;
 }
 
@@ -1099,26 +1024,40 @@ async function animateTriggerSpin() {
 
 /* Bonus buy : payer, montrer le tour des 4 scatters, puis entrer dans les free spins. */
 async function buyBonus() {
-  if (state.busy) return;
+  if (state.busy || state.autoActive) return;
   if (state.balance < round2(buyCost())) { flashInsufficient(); return; }
   setBusy(true);
-  setAnte(false);                    // l'achat ignore l'ante
-  state.balance = round2(state.balance - round2(buyCost()));
-  balanceEl.textContent = fmt(state.balance);
-  winValEl.textContent = fmt(0);
+  try {
+    setAnte(false);                    // l'achat ignore l'ante
+    state.balance = round2(state.balance - round2(buyCost()));
+    balanceEl.textContent = fmt(state.balance);
+    saveSettings();                    // persiste le solde après débit
+    winValEl.textContent = fmt(0);
 
-  await animateTriggerSpin();          // tour avec les 4 scatters qui tombent
-  const fsUnit = await runFreeSpins(true);
-  await creditWin(fsUnit);
-  setBusy(false);
+    await animateTriggerSpin();          // tour avec les 4 scatters qui tombent
+    const fsUnit = await runFreeSpins(true);
+    await creditWin(fsUnit);
+  } finally {
+    winStackHide();
+    setBusy(false);                    // jamais figé en « busy » même sur exception
+  }
 }
 
+/* Verrous d'interface : pendant un tour OU pendant l'autoplay, on gèle mise / ante / achat
+   (l'autoplay doit dérouler avec les réglages choisis au lancement). SPIN reste actif en
+   autoplay : il devient STOP. */
+function updateLocks() {
+  const lock = state.busy || state.autoActive;
+  spinBtn.disabled = state.busy && !state.autoActive;
+  anteBtn.disabled = lock;
+  buyBtn.disabled = lock;
+  ["betUp", "betDown", "buyBetUp", "buyBetDown"].forEach((id) => {
+    const el = $(id); if (el) el.disabled = lock;
+  });
+}
 function setBusy(b) {
   state.busy = b;
-  spinBtn.disabled = b && !state.autoActive;   // pendant l'autoplay, SPIN reste actif (= STOP)
-  anteBtn.disabled = b;
-  buyBtn.disabled = b;
-  $("betUp").disabled = $("betDown").disabled = b;
+  updateLocks();
 }
 
 function flashInsufficient() {
@@ -1136,29 +1075,49 @@ function updateAutoUI() {
   // pendant l'autoplay, le bouton SPIN devient STOP (et reste cliquable)
   spinBtn.classList.toggle("autostop", state.autoActive);
   spinBtn.title = state.autoActive ? "Arrêter les tours automatiques" : "";
-  if (autoRow) autoRow.classList.toggle("running", state.autoActive);
+  spinBtn.setAttribute("aria-label", state.autoActive ? "Arrêter les tours automatiques" : "SPIN");
+  if (autoRow) {
+    autoRow.classList.toggle("running", state.autoActive);
+    const lbl = autoRow.querySelector("span");   // compteur de tours restants visible dans le menu
+    if (lbl) lbl.textContent = state.autoActive
+      ? "Tours automatiques · " + (state.auto < 0 ? "∞" : state.auto)
+      : "Tours automatiques";
+  }
 }
+/* Jeton de session : stopAuto() l'incrémente, ce qui invalide toute boucle runAuto encore
+   en vol (bloquée sur un await). Sans ça, STOP puis relance pendant un spin en cours
+   pouvait faire tourner DEUX boucles d'autoplay en parallèle. */
+let autoToken = 0;
 function stopAuto() {
+  autoToken++;
   state.autoActive = false;
   state.auto = 0;
   updateAutoUI();
-  setBusy(state.busy);   // resynchronise l'état activé/désactivé du bouton SPIN
+  updateLocks();
 }
-async function runAuto() {
-  while (state.autoActive && state.auto !== 0) {
-    if (state.balance < round2(spinCost())) { flashInsufficient(); break; }
-    if (state.auto > 0) state.auto--;
-    updateAutoUI();
-    await spin();
-    if (!state.autoActive) break;            // arrêt manuel pendant le spin
-    if (state.autoStopFs && state.lastFs) break;          // stop sur free spins
-    if (state.autoStopBigWin && state.lastBigWin) break;  // stop sur big win
-    await sleep(dur(260));                    // petite pause entre deux tours
+async function runAuto(token) {
+  try {
+    while (state.autoActive && token === autoToken && state.auto !== 0) {
+      if (state.balance < round2(spinCost())) { flashInsufficient(); break; }
+      if (state.auto > 0) state.auto--;
+      updateAutoUI();
+      const played = await spin();
+      if (token !== autoToken || !state.autoActive) break;  // arrêt manuel pendant le spin
+      if (!played) {                            // spin refusé (ne devrait pas arriver avec les verrous) :
+        if (state.auto >= 0) state.auto++;      // on rend le tour consommé et on s'arrête proprement
+        break;
+      }
+      if (state.autoStopFs && state.lastFs) break;          // stop sur free spins
+      if (state.autoStopBigWin && state.lastBigWin) break;  // stop sur big win
+      await sleep(dur(260));                    // petite pause entre deux tours
+    }
+  } finally {
+    // même si spin() lève : pas de session zombie (verrous engagés, STOP affiché à vide)
+    if (token === autoToken) stopAuto();
   }
-  stopAuto();
 }
 function startAuto(n) {
-  if (state.autoActive) return;
+  if (state.autoActive || state.busy) return;   // pas de lancement pendant un tour / des free spins
   // ferme le menu (et la sous-section auto)
   autoMenu.classList.remove("show");
   if (autoRow) autoRow.classList.remove("open");
@@ -1167,7 +1126,8 @@ function startAuto(n) {
   state.autoActive = true;
   state.auto = n;                            // -1 = illimité
   updateAutoUI();
-  runAuto();
+  updateLocks();
+  runAuto(autoToken);
 }
 
 /* ----------------------------------------------------------------------
@@ -1213,8 +1173,9 @@ function buildPaytable() {
     `<b>Pay-anywhere :</b> 8 symboles identiques ou plus, n'importe où sur la grille, paient.<br>` +
     `<b>Tumble :</b> les gagnants disparaissent, les autres tombent, de nouveaux arrivent — tant qu'il y a un gain.<br>` +
     `<b>Orbes :</b> les multiplicateurs présents s'additionnent et multiplient le gain de la séquence.<br>` +
-    `<b>Free spins :</b> 4 Orbes d'Olympe ou plus déclenchent 15 tours ; multiplicateur persistant.<br>` +
-    `<b>Ante bet :</b> mise +25 %, free spins plus fréquents. <b>Buy :</b> achat direct (88× la mise).<br>` +
+    `<b>Free spins :</b> 4 Orbes d'Hadès ou plus déclenchent 15 tours ; multiplicateur persistant ; ` +
+    `<b>retrigger :</b> 3 orbes ou plus pendant les free spins = +${CFG.FS_RETRIG} tours.<br>` +
+    `<b>Ante bet :</b> mise +25 %, free spins plus fréquents. <b>Buy :</b> achat direct (${BUY_COST_MULT}× la mise).<br>` +
     `<b>Max win :</b> 5000× la mise. <b>RTP :</b> ≈ 96 %.` +
     `</p></div>`;
 
@@ -1224,8 +1185,10 @@ function buildPaytable() {
 /* ----------------------------------------------------------------------
    Controles
    ---------------------------------------------------------------------- */
-// Persistance des réglages (PAS le solde) : mise, vitesse, sons.
+// Persistance des réglages ET du solde de démo : mise, vitesse, sons, stops autoplay, solde.
+// Si le solde sauvegardé est trop bas pour jouer (< mise minimale), on repart à 10 000.
 const SETTINGS_KEY = "got_settings";
+const BALANCE_RESET = 10000;
 function hasStorage() {
   try { return typeof localStorage !== "undefined" && localStorage; } catch (e) { return false; }
 }
@@ -1236,6 +1199,7 @@ function saveSettings() {
       bet: state.betIndex, speed: state.speedIndex,
       sfx: Snd.isSfxOn(), music: Snd.isMusicOn(),
       autoStopBig: state.autoStopBigWin, autoStopFs: state.autoStopFs,
+      balance: state.balance,
     }));
   } catch (e) { /* quota / mode privé : on ignore */ }
 }
@@ -1250,6 +1214,11 @@ function loadSettings() {
   if (s.music === false) Snd.setMusic(false);
   if (s.autoStopBig === true) state.autoStopBigWin = true;
   if (s.autoStopFs === true) state.autoStopFs = true;
+  if (typeof s.balance === "number" && isFinite(s.balance) && s.balance >= BETS[0]) {
+    state.balance = round2(s.balance);        // solde de démo persistant
+  } else {
+    state.balance = BALANCE_RESET;            // absent / ruiné (< mise min) : on repart à 10 000
+  }
 }
 
 function updateBet() {
@@ -1261,7 +1230,7 @@ function updateBet() {
   const bcc = $("buyConfirmCost"); if (bcc) bcc.textContent = fmt(buyCost());
 }
 function changeBet(delta) {
-  if (state.busy) return;
+  if (state.busy || state.autoActive) return;   // mise gelée pendant un tour et pendant l'autoplay
   Snd.click();
   state.betIndex = Math.min(BETS.length - 1, Math.max(0, state.betIndex + delta));
   updateBet(); saveSettings();
@@ -1275,12 +1244,14 @@ function updateSpeed() {
 }
 $("betUp").addEventListener("click", (e) => { e.stopPropagation(); changeBet(1); });   // dans le menu : ne pas fermer
 $("betDown").addEventListener("click", (e) => { e.stopPropagation(); changeBet(-1); });
-anteBtn.addEventListener("click", () => {
+anteBtn.addEventListener("click", (e) => {
+  e.stopPropagation();                          // l'ante vit dans le menu : ne pas le fermer
+  if (state.busy || state.autoActive) return;   // (guard AVANT le son : pas de clic sur un bouton inopérant)
   Snd.click();
-  if (state.busy) return;
   state.ante = !state.ante;
   setAnte(state.ante);
   anteBtn.classList.toggle("on", state.ante);
+  anteBtn.setAttribute("aria-pressed", String(state.ante));
   updateBet();
 });
 const buyConfirm = $("buyConfirm");
@@ -1288,7 +1259,7 @@ const buyConfirmBtn = $("buyConfirmBtn");
 const buyCancel = $("buyCancel");
 const buyConfirmCost = $("buyConfirmCost");
 buyBtn.addEventListener("click", () => {
-  if (state.busy) return;
+  if (state.busy || state.autoActive) return;   // défense en profondeur (le bouton est aussi disabled)
   Snd.click();
   updateBet();                       // synchronise la mise + le coût affichés dans le panneau
   buyConfirm.classList.add("show");
@@ -1304,9 +1275,9 @@ $("insufficientOk").addEventListener("click", () => { Snd.click(); insufficientM
 insufficientModal.addEventListener("click", (e) => { if (e.target === insufficientModal) insufficientModal.classList.remove("show"); });
 function updateSndMenu() {
   const sfx = Snd.isSfxOn(), mus = Snd.isMusicOn();
-  sfxToggle.classList.toggle("on", sfx);
-  musToggle.classList.toggle("on", mus);
-  allToggle.classList.toggle("on", sfx || mus);
+  sfxToggle.classList.toggle("on", sfx); sfxToggle.setAttribute("aria-pressed", String(sfx));
+  musToggle.classList.toggle("on", mus); musToggle.setAttribute("aria-pressed", String(mus));
+  allToggle.classList.toggle("on", sfx || mus); allToggle.setAttribute("aria-pressed", String(sfx || mus));
   menuBtn.classList.toggle("muted", !sfx && !mus);
 }
 function collapseMenuSubs() {   // replie les sous-sections (Sons + Tours auto)
@@ -1409,8 +1380,8 @@ autoMenu.querySelectorAll(".auto-opt").forEach((opt) => {
 // Options autoplay : stop sur big win / free spins (toggles)
 const autoStopBigBtn = $("autoStopBig"), autoStopFsBtn = $("autoStopFs");
 function updateAutoStops() {
-  if (autoStopBigBtn) autoStopBigBtn.classList.toggle("on", state.autoStopBigWin);
-  if (autoStopFsBtn) autoStopFsBtn.classList.toggle("on", state.autoStopFs);
+  if (autoStopBigBtn) { autoStopBigBtn.classList.toggle("on", state.autoStopBigWin); autoStopBigBtn.setAttribute("aria-pressed", String(state.autoStopBigWin)); }
+  if (autoStopFsBtn) { autoStopFsBtn.classList.toggle("on", state.autoStopFs); autoStopFsBtn.setAttribute("aria-pressed", String(state.autoStopFs)); }
 }
 if (autoStopBigBtn) autoStopBigBtn.addEventListener("click", (e) => {
   e.stopPropagation(); Snd.click();
@@ -1428,7 +1399,23 @@ function onSpinPress() {
   spin();
 }
 spinBtn.addEventListener("click", onSpinPress);
-document.addEventListener("keydown", (e) => { if (e.code === "Space") { e.preventDefault(); onSpinPress(); } });
+// La barre Espace est inerte quand un écran/panneau est ouvert (achat, gains, solde insuffisant,
+// menu, écran d'accueil, chargement) : sinon elle lançait un spin DERRIÈRE l'overlay.
+function uiBlocked() {
+  if (document.getElementById("loader")) return true;                       // chargement
+  const so = document.getElementById("startOverlay");
+  if (so && so.classList.contains("show") && !so.classList.contains("hide")) return true;  // « Appuyez pour commencer »
+  return [buyConfirm, ptOverlay, insufficientModal, fsOverlay, mainMenu]
+    .some((el) => el && el.classList.contains("show"));
+}
+document.addEventListener("keydown", (e) => {
+  if (e.code !== "Space") return;
+  e.preventDefault();
+  if (e.repeat) return;              // maintenir Espace ne mitraille pas (stop puis spin non voulu)
+  kickAudio();                       // l'audio démarre aussi au 1er geste clavier
+  if (uiBlocked()) return;
+  onSpinPress();
+});
 
 // Démarrage audio au 1er geste (les navigateurs bloquent l'autoplay)
 let audioStarted = false;
@@ -1477,10 +1464,21 @@ function positionControls() {
 }
 window.addEventListener("resize", positionControls);
 window.addEventListener("orientationchange", () => setTimeout(positionControls, 200));
+// La pile de gain (winstack) suit aussi la grille en cas de rotation/resize pendant l'affichage
+window.addEventListener("resize", () => {
+  if (winStackEl && winStackEl.classList.contains("show") && !winStackEl.classList.contains("fly")) winStackPos();
+});
 
-dropIn(Array.from({ length: CFG.CELLS }, newCell), false);   // remplissage initial statique (pas d'animation)
+// Remplissage initial statique (pas d'animation), colonne par colonne : respecte
+// la règle « max 1 scatter par colonne » dès l'écran d'accueil.
+const initCells = new Array(CFG.CELLS);
+for (let c = 0; c < CFG.REELS; c++) {
+  const col = fillColumn([], CFG.ROWS);
+  for (let r = 0; r < CFG.ROWS; r++) initCells[idx(c, r)] = col[r];
+}
+dropIn(initCells, false);
 buildPaytable();
-loadSettings();          // réglages sauvegardés (mise, vitesse, sons) — pas le solde
+loadSettings();          // réglages sauvegardés (mise, vitesse, sons) + solde de démo persistant
 updateBet();
 updateSpeed();
 updateSndMenu();

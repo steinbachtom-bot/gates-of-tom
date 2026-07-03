@@ -3,8 +3,10 @@
   "configurations": [
     {
       "name": "gates-of-tom",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8123"],
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        ".claude/static-server.mjs"
+      ],
       "port": 8123
     }
   ]

@@ -33,9 +33,11 @@ function makeEl(id) {
       if (id === "fsStart" && type === "click") setTimeout(cb, 0);
     },
     removeEventListener: () => {},
-    querySelector: (sel) => getEl(sel.replace("#", "")),
+    querySelector: (sel) => getEl(String(sel).replace(/^[.#]/, "")),
     querySelectorAll: () => [],
     getAttribute: () => null,
+    setAttribute: () => {},
+    removeAttribute: () => {},
   };
   return el;
 }
@@ -47,10 +49,16 @@ const document = {
   getElementById: getEl,
   createElement: () => makeEl("dyn"),
   addEventListener: () => {},
+  querySelector: (sel) => getEl(String(sel).replace(/^[.#]/, "")),
+  documentElement: makeEl("documentElement"),   // requis par la détection fullscreen
+  body: makeEl("body"),                          // requis par la winstack / fx-layer
 };
 
 const context = {
   document, console, Math, setTimeout: (fn) => setTimeout(fn, 0),
+  clearTimeout, setInterval, clearInterval,
+  addEventListener: () => {},                    // window.addEventListener (window === context)
+  removeEventListener: () => {},
   module: undefined,
 };
 context.window = context;

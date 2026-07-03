@@ -14,6 +14,7 @@ Double-cliquer **`index.html`** (s'ouvre dans le navigateur). Barre Espace ou bo
 | `index.html` | Page du jeu (structure + style *Mad Olympus*) |
 | `engine.js` | **Moteur math** (source unique : poids, paytable, cascades, orbes, free spins, RTP) |
 | `game.js` | Rendu, animations de cascade, multiplicateurs, flux des free spins |
+| `build.py` | Build local → `GATES_OF_TOM.html` (fichier unique autonome, **non versionné**) |
 | `slot_engine.py` + scripts | Moteur Python d'origine + outils de calibrage/simulation |
 | `MATH_SPEC.md` | Fiche math (PAR sheet simplifiée) |
 | `node_test.js` | Test RTP du moteur JS : `node node_test.js 600000` |

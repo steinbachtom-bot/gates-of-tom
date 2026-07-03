@@ -46,9 +46,11 @@ Gates of Tom/
 **Principe clé** : `engine.js` décide TOUT (résultat math). `game.js` ne fait qu'afficher.
 C'est volontaire pour préparer la Phase 2 (RNG côté serveur).
 
-**Build** : `python build.py` produit `GATES_OF_TOM.html` (~31 Mo, un seul fichier autonome,
-tous les assets en base64 — images, vidéos, sons, favicons). Note : `hud_frame.png` est référencé
-en CSS `url(...)` (pas un `src=`) → embarqué à part dans `build.py`.
+**Build** : `python3 build.py` produit `GATES_OF_TOM.html` (~31 Mo, un seul fichier autonome,
+tous les assets en base64 — images, vidéos, sons, favicons, polices). **Artefact LOCAL, non versionné**
+*(maj 2026-07-03 : il gonflait le .git à 1,6 GiB — retiré du suivi + historique purgé)*. Chaque
+remplacement du build est vérifié (échec bruyant si une cible manque) + contrôle final « zéro référence
+relative restante ».
 
 ---
 
@@ -198,7 +200,9 @@ Implémenté via `bigWinTierInfo(u)` (game.js) + classes `.tier-grand/enorme/oly
   → ajout de `flex-shrink: 0`.
 - **Écran « tap to start »** (`.start-overlay`) : icône 512 + logo + « Appuyez pour commencer »,
   câblé en script inline **indépendant de game.js** (backstop si game.js tarde / cache GitHub Pages).
-- **Réglages persistants (localStorage `got_settings`)** : mise, vitesse, sfx, musique, autoStopBig, autoStopFs.
+- **Réglages persistants (localStorage `got_settings`)** : mise, vitesse, sfx, musique, autoStopBig, autoStopFs,
+  **et le solde de démo** *(maj 2026-07-03 : le solde est désormais réellement persisté ; s'il tombe sous la mise
+  minimale (0,20), on repart à 10 000 au chargement)*.
 - **Autoplay** avec arrêts conditionnels : `autoStopBig` (stop sur gros gain), `autoStopFs` (stop sur free spins) —
   toggles dans le menu autoplay, persistés et restaurés.
 - **Barre minimaliste empilée + menu central (☰)** *(maj 2026-06-24)* : objectif utilisateur =
@@ -268,7 +272,7 @@ Implémenté via `bigWinTierInfo(u)` (game.js) + classes `.tier-grand/enorme/oly
   tomber le normal à 65 %. Choix utilisateur = **« Hybride A, moins sec »** (RTP surtout via la feature,
   mais base plus consistante pour avoir un peu de gain entre deux features). Calibré par Monte-Carlo :
   **`SCATTER_W` 7→9** et **`PAY_SCALE` 0,851→0,890**. Profil mesuré (48 M spins) : **RTP ~96 %**
-  (centre, bruit inhérent ±0,7 %), hit 15,1 %, free spins **1/194**, répartition ~52 base / ~42 feature,
+  (centre, bruit inhérent ±0,7 %), hit 15,1 %, free spins **1/194**, répartition ~52 pts base / ~43 pts feature,
   max win ~1/1,3 M. ⚠️ Le RTP exact reste flou en JS (slot très volatil) → précision certif = sim compilée
   (cf. MATH_SPEC). Note : le hit rate (~15 %) ne bouge pas avec ces leviers — pour des gains de base **plus
   fréquents** (pas seulement plus gros), il faudrait toucher aux **poids des symboles** (réglage séparé).
@@ -284,11 +288,64 @@ Implémenté via `bigWinTierInfo(u)` (game.js) + classes `.tier-grand/enorme/oly
 
 ---
 
+## 10 bis. Audit complet + corrections (2026-07-03)
+
+Audit multi-agents (math / logique de jeu / HTML-build-repo) puis correction de **tous** les points :
+
+**Sécurité / repo (critique)**
+- 🔒 **`business/` retiré du repo public ET purgé de tout l'historique** (`git filter-repo`) — il contenait des
+  données personnelles/fiscales. Les fichiers restent en **local uniquement** (+ sauvegardes : bundle complet
+  `gates-of-tom-SAUVEGARDE-avant-purge.bundle` et copie du dossier dans `~/Desktop/100k/`). `.gitignore` mis à jour.
+- 📦 **`GATES_OF_TOM.html` (31 Mo) sorti du suivi git + purgé de l'historique** : le `.git` est passé de
+  **1,6 GiB → ~46 Mo**. Le standalone reste un artefact de **build local** (`python3 build.py`).
+- ✉️ E-mails de commit réécrits vers l'adresse noreply GitHub (plus de nom de machine) ; `git config` local aligné.
+- 🌐 **Google Fonts auto-hébergées** (12 woff2 subset latin dans `assets/fonts/` + `fonts.css`) : plus aucun
+  appel externe (RGPD). `build.py` embarque aussi les fontes dans le standalone.
+- 🛡️ `static-server.mjs` : bind **127.0.0.1** (plus d'exposition LAN), anti-traversal strict (séparateur), blocage
+  des dotfiles (`.git`…) et de `business/`, `nosniff`, chemin racine portable (plus de chemin personnel en dur).
+  `launch.json` : `--bind 127.0.0.1` aussi.
+
+**Bugs corrigés (game.js)**
+- 🎰 **Autoplay durci** : jeton de session (`autoToken`) → impossible d'avoir deux boucles runAuto en parallèle
+  (STOP puis relance pendant un spin en vol) ; `startAuto` refuse pendant un tour/FS ; un spin refusé **rend** son
+  tour au compteur ; mise / ante / buy **verrouillés pendant l'autoplay** (`updateLocks`) ; le compteur de tours
+  restants s'affiche sur la ligne du menu (« Tours automatiques · N ») qui s'allume en ichor (`.mm-row.running`).
+- 🧯 **try/finally sur `spin()` et `buyBonus()`** : une exception imprévue ne fige plus le jeu en « busy ».
+- ⌨️ **Espace** : inerte quand un overlay est ouvert (achat, gains, solde insuffisant, menu, écran d'accueil,
+  chargement), ignore `e.repeat`, et démarre l'audio (1er geste clavier).
+- 🖼️ **Cadre Gain cohérent en free spins** : il affiche désormais le **cumul du pari** (base déclencheuse + FS),
+  plafonné à 5000× → au max win le joueur voit bien 5000×, et le gain de base n'est plus écrasé. Plus d'envol
+  « 0,00 » quand le cap est déjà atteint ; plus de « RETRIGGER +5 » annoncé puis jamais joué au cap.
+- 💾 **Solde de démo persistant** (cf. §7) — la doc disait « persistant » alors qu'il ne l'était pas.
+- 🪟 winstack : suit la grille au resize/rotation ; la durée de l'envol suit la vitesse de jeu (Turbo).
+- 🧹 **Code mort retiré** (~110 lignes JS : synthé musique jamais appelé, popCascadeWin/floatWin/flashMultTotal/
+  countUpWin/scatterIndices/spinIntro) et **~65 lignes CSS mortes** (.scene, .betbox, .speedbtn, ancien bouton AUTO,
+  .metal…). `click.ogg` orphelin supprimé.
+- 🎨 Cosmétique : la grille d'accueil et l'animation d'achat respectent « max 1 scatter/colonne » (tirage pondéré).
+- ♿ A11y : aria-label sur les boutons −/+/✕ et SPIN/STOP, aria-pressed sur ante et tous les toggles.
+  (`user-scalable=no` conservé : assumé pour un jeu tactile.)
+
+**Build**
+- 🏗️ `build.py` : chaque remplacement est **vérifié** (échec bruyant si une cible disparaît d'index.html) ;
+  `icon-512.png` (écran d'accueil) désormais embarqué ; contrôle final = zéro référence relative restante.
+
+**Docs** : MATH_SPEC (scatter pays scalés par PAY_SCALE, ventilation 52 pts base / 43 pts FS), Game_Sheet
+(symboles réels : Rubis/Améthyste/Topaze…, « Orbe d'Hadès », hit 15,1 %), règles in-game (retrigger documenté,
+« Orbe d'Hadès »), README (standalone non versionné).
+
+**Différé (phase math finale)** : outillage ante/buy côté Python (le chiffre ante ~95,7 % n'est pas
+reproductible par les scripts livrés — re-mesuré à ~94,9 ±1 % pendant l'audit, cohérent), scripts de
+calibrage historiques désynchronisés (calibrate/tune/finals), verrou d'écriture accumulate.py.
+
+---
+
 ## 11. Conventions de travail
 
-- **Commit + push automatiques après CHAQUE modification** *(maj 2026-06-22)* : l'utilisateur teste
+- **Commit + push automatiques après CHAQUE modification** *(maj 2026-07-03)* : l'utilisateur teste
   sur son portable via GitHub Pages, donc chaque changement terminé est commité **et** poussé sur `main`
-  sans attendre — standalone reconstruit si `engine.js`/`game.js`/`index.html` ont changé.
+  sans attendre. Le standalone `GATES_OF_TOM.html` n'est **plus versionné** : on le reconstruit en local
+  (`python3 build.py`) quand on en a besoin (le build sert aussi de contrôle d'intégrité des références).
+- **`business/` ne doit JAMAIS être versionné** (repo public — données personnelles). Il est dans `.gitignore`.
 - Les visuels/vidéos/sons sont produits en externe par l'utilisateur ; j'écris les **prompts**
   (ChatGPT / Suno / PixVerse) puis j'**intègre** les livrables.
 - Scripts helper dans `/tmp` (slice_symbols.py, measure.py, transp.py) — modifiés par l'utilisateur, **ne pas écraser**.

@@ -9,7 +9,7 @@ Ce document résume la mécanique, les paramètres et les résultats mesurés.
 - **Gains « pay anywhere »** : 8 symboles identiques ou plus, n'importe où sur la grille, paient. Pas de lignes.
 - **Tumble (cascade)** : les symboles gagnants disparaissent, les autres tombent, de nouveaux symboles remplissent le haut, ré-évaluation. On continue tant qu'il y a un gain.
 - **Orbes multiplicateurs (Zeus)** : valeurs x2 à x500. En jeu de base, la somme des orbes présents multiplie le gain du round. En free spins, un **multiplicateur persistant** additionne tous les orbes de la session et s'applique à chaque gain.
-- **Scatters** : 4 scatters ou plus déclenchent **15 free spins** (retrigger +5 avec 3+ scatters). Gains directs : 4 = 3×, 5 = 5×, 6 = 100× la mise.
+- **Scatters** : 4 scatters ou plus déclenchent **15 free spins** (retrigger +5 avec 3+ scatters). Gains directs (valeurs de table : 4 = 3×, 5 = 5×, 6 = 100×), **scalés par PAY_SCALE comme tous les gains** → effectifs ≈ 2,67× / 4,45× / 89× (c'est ce que la table in-game affiche).
 - **Plafond de gain (max win)** : 5000× la mise par round. Standard du marché ; indispensable pour borner la volatilité.
 
 ## Paramètres calibrés
@@ -36,7 +36,7 @@ Le RTP est **linéaire** en fonction du scaler : pour viser un autre RTP, multip
 | Hit rate (taux de gain) | ≈ 15,1 % |
 | Fréquence des free spins | ≈ 1 / 194 spins |
 | Gain max observé | ~5000× (plafond), atteint ~1 / 1 300 000 spins |
-| Volatilité | **Élevée** (profil « hybride A » : ~44 % du RTP via les free spins, ~52 % via le jeu de base) |
+| Volatilité | **Élevée** (profil « hybride A » : ≈ 52 points de RTP via le jeu de base (55 %), ≈ 43 points via les free spins (45 %)) |
 
 ## Note importante sur la précision du RTP
 

@@ -618,27 +618,32 @@
   /* ===== DESKTOP compact : tout tient dans la fenêtre sans scroller =====
      (min-height:561px exclut les téléphones en paysage, gérés au-dessus) */
   @media (min-width:761px) and (min-height:561px){
+    /* header à hauteur DÉTERMINISTE (px fixes) : les cadres fixés se calent dessus */
     header{padding:10px 12px 0;}
-    .logo{font-size:clamp(24px,3.4vw,36px);}
-    .subtitle{font-size:clamp(11px,1.6vw,14px); margin-top:3px;}
-    /* cadres Solde / Gain rétrécis */
-    .hudbar{margin-top:6px; padding:0 10px;}
-    .stat{flex:0 1 172px; max-width:172px;}
-    .stat .label{font-size:8px; letter-spacing:.2em;}
-    .stat .val{font-size:16px;}
-    .fs-hud{margin:4px 0 0;}
-    /* la scène se dimensionne selon la hauteur de fenêtre (7552/4256 ≈ 1.7744) */
-    .stage{margin:6px auto 0; max-width:min(1040px, calc((100vh - 380px) * 1.7744));}
+    .logo{font-size:32px;}
+    .subtitle{font-size:13px; margin-top:3px;}
+    /* cadres Solde / Gain miniatures, posés SUR la scène (coins haut-gauche / haut-droit).
+       Même formule de largeur que la scène (centrée) → les cadres suivent ses bords.
+       Scène : top = header 61px + marge 6px = 67px ; cadres inset de 10px → top 77px. */
+    .hudbar{position:fixed; top:82px; left:50%; transform:translateX(-50%);
+      width:calc(min(100vw, 1040px, (100vh - 260px) * 1.7744) - 20px);
+      max-width:none; margin:0; padding:0; z-index:30; pointer-events:none;}
+    /* padding en PX (pas en % : un % se calcule sur la hudbar de ~1020px → min-width forcée à 388px) */
+    .stat{flex:0 0 132px; max-width:132px; min-width:0; padding:0 25px;}
+    .stat .label{font-size:7.5px; letter-spacing:.18em;}
+    .stat .val{font-size:13px;}
+    /* pills free spins juste SOUS les cadres (mêmes bords que la scène) */
+    .fs-hud{position:fixed; top:164px; left:50%; transform:translateX(-50%);
+      width:calc(min(100vw, 1040px, (100vh - 260px) * 1.7744) - 20px);
+      max-width:none; margin:0; padding:0; z-index:30; pointer-events:none;}
+    .fs-pill{font-size:10px; padding:4px 10px;}
+    /* la scène se dimensionne selon la hauteur de fenêtre (7552/4256 ≈ 1.7744) ;
+       les cadres étant sur la scène, le budget vertical descend à 260px */
+    .stage{margin:6px auto 0; max-width:min(1040px, calc((100vh - 260px) * 1.7744));}
     /* contrôles sur UNE rangée : BUY BONUS · SPIN · ☰ */
     .controls{flex-direction:row; align-items:center; gap:22px; padding:10px 12px 6px;}
     .bar-buy,.bar-spin,.bar-menu{display:contents;}
     .footer-note{padding:2px 16px 10px; font-size:9.5px;}
-  }
-  /* fenêtre assez large : les cadres montent au niveau du logo (une rangée gagnée) */
-  @media (min-width:980px) and (min-height:561px){
-    .hudbar{margin-top:-58px; pointer-events:none;}
-    .hudbar .stat{pointer-events:auto;}
-    .stage{margin-top:10px;}
   }
 
   /* ===== PORTRAIT MOBILE : image plein écran, UI posée sur les bandes sombres ===== */

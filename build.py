@@ -67,6 +67,12 @@ if os.path.exists(os.path.join(ROOT, hud_rel)):
     html = sub(html, "url(" + hud_rel + ")",
                "url(data:image/png;base64," + b64(hud_rel) + ")", hud_rel)
 
+# Fond desktop plein écran (outpainting) : référencé en CSS url(...)
+wide_rel = "assets/decor/bg_desktop_wide.jpg"
+if os.path.exists(os.path.join(ROOT, wide_rel)):
+    html = sub(html, "url(" + wide_rel + ")",
+               "url(data:image/jpeg;base64," + b64(wide_rel) + ")", wide_rel)
+
 # Favicons (href=) + icône de l'écran « appuyez pour commencer » (src=)
 for icon_rel in ("assets/icons/icon-32.png", "assets/icons/icon-180.png"):
     if os.path.exists(os.path.join(ROOT, icon_rel)):

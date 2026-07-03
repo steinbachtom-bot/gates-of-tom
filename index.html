@@ -45,6 +45,21 @@
     -webkit-font-smoothing:antialiased; user-select:none; overflow-x:hidden;
     touch-action:manipulation; -webkit-tap-highlight-color:transparent;
   }
+  /* Desktop / paysage : l'œuvre étendue (outpainting de bg_hades_web) remplit toute la fenêtre
+     derrière la scène de jeu, sous un voile radial (centre plus clair) — la grille reste le héros.
+     Non chargée en portrait mobile (la scène plein écran couvre déjà tout). */
+  @media (min-width:761px), (orientation:landscape){
+    body{
+      background-color:#080605;
+      background-image:
+        radial-gradient(ellipse 92% 82% at 50% 44%, rgba(6,4,4,0), rgba(6,4,4,.22) 88%),
+        url(assets/decor/bg_desktop_wide.jpg);
+      background-position:center, center;
+      background-size:cover, cover;
+      background-repeat:no-repeat, no-repeat;
+      background-attachment:fixed, fixed;
+    }
+  }
   /* grain + vignette */
   .fx-grain,.fx-vig{position:fixed; inset:0; pointer-events:none; z-index:60;}
   .fx-grain{opacity:.05; mix-blend-mode:overlay;

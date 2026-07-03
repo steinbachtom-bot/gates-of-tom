@@ -94,6 +94,15 @@ Workflow récurrent : **l'utilisateur génère les visuels en externe** (ChatGPT
   par `overflow:hidden`. Portail portrait agrandi d'un cheveu (`--fl/--ft/--fw/--fh`) → la coupe passe
   **derrière le cadre** de l'avant-plan, symboles d'extrémité entiers.
 
+### Fond desktop plein écran — `bg_desktop_wide.jpg` *(maj 2026-07-03, généré via fal.ai)*
+- **Premier asset généré directement via l'API fal.ai** (clé de l'utilisateur, `~/.config/fal/key`) :
+  outpainting de `bg_hades_web.jpg` (FLUX Fill pro + ESRGAN ×2) → la fenêtre desktop entière est
+  remplie par le paysage étendu (montagnes, braises, rivière de lave), la scène de jeu par-dessus.
+  Original réduit à 45 % au centre du canvas → caché derrière la scène (pas de personnages en double) ;
+  extension « environnement uniquement ». Procédé détaillé dans `assets/DECOR_PROMPTS.md` §6.
+- CSS : fond `body` desktop/paysage uniquement (media query → pas téléchargé en portrait mobile),
+  voile radial léger + vignette existante. Gamma 1,55 appliqué à l'asset (bords sinon quasi noirs).
+
 ### Cadre HUD « Solde » / « Gain » — `hud_frame.png` *(maj 2026-06-23)*
 - L'utilisateur a généré un **cadre ornementé** (or martelé / oxblood / fissures ichor) via ChatGPT.
 - Deux corrections à l'intégration : (1) le PNG n'était **pas transparent** (ChatGPT peint un **faux damier** en dur) →

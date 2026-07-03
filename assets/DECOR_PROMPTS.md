@@ -103,3 +103,20 @@ marquée → la pastille Gain « respire » plus froid que la pastille Solde (do
 
 Intégration : tu déposes p.ex. `assets/decor/hud_frame.png` (et `hud_frame_gain.png` si variante) ;
 je remplace le fond CSS des `.stat` par le cadre et je recale le texte dedans (responsive inclus).
+
+---
+
+## 6) Fond desktop plein écran — `bg_desktop_wide.jpg` *(généré via fal.ai, 2026-07-03)*
+
+Outpainting de `bg_hades_web.jpg` pour remplir toute la fenêtre desktop autour de la scène de jeu.
+Procédé (reproductible) :
+1. Canvas 2048×1152, original réduit à **45 % de largeur** au centre (→ restera caché derrière la
+   scène de jeu : évite les « personnages en double »), masque blanc = zones à générer (inset 20 px).
+2. **fal.ai `flux-pro/v1/fill`** — prompt « pure environment matte painting … » (montagnes obsidienne,
+   braises, ruines, lave ; interdits STRICTS : no text/title/frame/characters — ⚠️ ne PAS écrire
+   « slot game artwork » dans le prompt, le modèle génère alors un titre + un cadre d'affiche).
+3. **fal.ai `esrgan`** ×2 (le fill plafonne à 1440 px) → 2880×1600 → resize 2304×1280.
+4. Post-prod : **gamma 1.55** (le modèle rend les bords quasi noirs ; on relève les ombres, la
+   vignette CSS `.fx-vig` garde le cadre sombre).
+CSS : fond `body` en media query `(min-width:761px), (orientation:landscape)` (pas chargé en
+portrait mobile), voile radial léger (0 → .22) par-dessus. Embarqué dans le standalone par build.py.

@@ -2,7 +2,7 @@
 
 > Récapitulatif de tout ce qui a été fait, et des décisions prises.
 > Projet : slot machine « pay-anywhere » type Gates of Olympus — **jetons virtuels uniquement**.
-> Dernière mise à jour : 2026-06-22.
+> Dernière mise à jour : 2026-07-03.
 
 ---
 
@@ -16,7 +16,7 @@
 | Type de jeu | Slot 6×5 *pay-anywhere* (gains 8+ symboles), cascades (tumbles) |
 | Argent | **Jetons virtuels uniquement**, aucun argent réel |
 | Solde de départ | **10 000** |
-| Hébergement | GitHub Pages — repo `steinbachtom-bot/WZ-Guide`… (voir mémoire) |
+| Hébergement | GitHub Pages — repo **`steinbachtom-bot/gates-of-tom`** (branche `main`) ; l'utilisateur teste sur portable |
 
 ---
 
@@ -26,7 +26,7 @@
 Gates of Tom/
 ├── index.html        markup + TOUT le CSS (thème Mad Olympvs)
 ├── engine.js         MOTEUR MATH — source unique de vérité (port de slot_engine.py)
-├── game.js           rendu, audio, animations cascade, multiplicateurs, flux free spins (~1270 lignes)
+├── game.js           rendu, audio, animations cascade, multiplicateurs, flux free spins (~1500 lignes)
 ├── build.py          build → GATES_OF_TOM.html autonome (assets base64 embarqués)
 ├── slot_engine.py    moteur Python d'origine + outils de calibrage
 ├── node_test.js      test RTP du moteur JS
@@ -36,7 +36,7 @@ Gates of Tom/
     ├── symbols/   premium_lion/demon/zeus/mask.png, gem_red/purple/yellow/green/blue.png,
     │              scatter_hades.png, orb_mult.png
     ├── decor/     bg_portrait.(png|jpg), bg_portrait_fg.png (avant-plan), bg_hades_web.jpg,
-    │              bigwin.mp4 (16:9, 3.3 Mo), bigwin_portrait.mp4 (4.2 Mo),
+    │              bigwin.mp4 / bigwin_portrait.mp4 (≈15 s), hud_frame.png (cadre Solde/Gain),
     │              og-image.jpg (1200×630), win_plaque.png
     ├── icons/     icon-32.png, icon-180.png, icon-512.png
     └── audio/     click, whoosh_spin, hit, land, scatter, fs_trigger, orbzap,
@@ -46,8 +46,9 @@ Gates of Tom/
 **Principe clé** : `engine.js` décide TOUT (résultat math). `game.js` ne fait qu'afficher.
 C'est volontaire pour préparer la Phase 2 (RNG côté serveur).
 
-**Build** : `python build.py` produit `GATES_OF_TOM.html` (~28 Mo, un seul fichier autonome,
-tous les assets en base64 — images, vidéos, sons, favicons).
+**Build** : `python build.py` produit `GATES_OF_TOM.html` (~31 Mo, un seul fichier autonome,
+tous les assets en base64 — images, vidéos, sons, favicons). Note : `hud_frame.png` est référencé
+en CSS `url(...)` (pas un `src=`) → embarqué à part dans `build.py`.
 
 ---
 
@@ -58,8 +59,10 @@ tous les assets en base64 — images, vidéos, sons, favicons).
 - **Orbes multiplicateurs x2–x500** (orbe violette `orb_mult.png`)
 - Multiplicateur **persistant** pendant les free spins
 - **Free spins** : 15 tours (4+ scatters), retrigger possible
-- **Max win 5000×**
-- **RTP ≈ 95,5–96 %**, volatilité élevée — vérifié sur des millions de spins
+- **Max win 5000×** (plafond **combiné** base + FS, cf. §10)
+- **1 scatter maximum par colonne** (≤ 6 scatters/grille) *(maj 2026-06-22)*
+- **RTP ≈ 96 %** sur les **3 modes** (normal / ante / achat), volatilité élevée — voir le **calibrage détaillé au §10**
+  (`SCATTER_W` 9, `PAY_SCALE` 0,890 ; ante ×1,14 ; achat 88×).
 - ⚠️ Correctif appliqué : les scatter pays n'étaient pas scalés par `PAY_SCALE` côté JS (divergeait du Python) → corrigé.
 
 ---
@@ -85,6 +88,17 @@ Workflow récurrent : **l'utilisateur génère les visuels en externe** (ChatGPT
 - **Technique de l'avant-plan** : `bg_portrait_fg.png` = découpe du portail posée **au-dessus** de la grille
   (z-index 5) → les bras de Méduse / la lance de Zeus passent **devant** les symboles.
 - **Zoom du fond** `scale(1.16)` (portrait) pour éviter que les symboles débordent sur personnages/piliers.
+- **Grille légèrement agrandie** *(maj 2026-06-24)* : les symboles premium (125 %) d'extrémité étaient rognés
+  par `overflow:hidden`. Portail portrait agrandi d'un cheveu (`--fl/--ft/--fw/--fh`) → la coupe passe
+  **derrière le cadre** de l'avant-plan, symboles d'extrémité entiers.
+
+### Cadre HUD « Solde » / « Gain » — `hud_frame.png` *(maj 2026-06-23)*
+- L'utilisateur a généré un **cadre ornementé** (or martelé / oxblood / fissures ichor) via ChatGPT.
+- Deux corrections à l'intégration : (1) le PNG n'était **pas transparent** (ChatGPT peint un **faux damier** en dur) →
+  **détourage par flood-fill depuis les bords** (le cadre doré fait barrière, le panneau central sombre est conservé) ;
+  (2) le cadre était **vertical** alors que le HUD Solde/Gain est **horizontal** → **rotation 90°** (au lieu de régénérer).
+- Intégration : fond des pastilles `.stat` (ratio verrouillé pour éviter la déformation, texte centré dans le panneau).
+- Prompt du cadre archivé dans `assets/DECOR_PROMPTS.md`.
 
 ---
 
@@ -119,7 +133,25 @@ Workflow récurrent : **l'utilisateur génère les visuels en externe** (ChatGPT
   colonnes pas encore révélées, **pendant** la cascade. Seuil dépendant du contexte :
   - **Jeu de base** : dès **3 scatters** (il en faut 4 pour les free spins).
   - **Free spins** : dès **2 scatters** (il en faut 3 pour un retrigger). *(maj 2026-06-22)*
-- **Révélation des orbes** : zap + `flashMultTotal`, `sparkBurst`, `floatWin`, `countUpEl`, count-up requestAnimationFrame.
+- **Révélation des orbes** : chaque orbe « zappe » (éclair + `sparkBurst`) sur la grille. Le **total ×N**
+  ne s'affiche **plus** dans un badge central (`flashMultTotal` retiré) → il apparaît dans la **volute de fumée**
+  de la nouvelle présentation du gain (ci-dessous).
+
+### Présentation du gain — accumulation → ×mult en fumée → multiplication → envol *(maj 2026-06-23)*
+
+Nouveau déroulé (jeu de base **ET** free spins), décidé avec l'utilisateur. Le cadre « Gain » ne bouge
+plus pendant le spin — il ne se met à jour qu'à l'**arrivée du vol** :
+
+1. **Accumulation** : à chaque gain, un petit montant s'affiche **au-dessus de la grille** ; en cascade,
+   il s'**additionne** (défilement) au fil des tumbles.
+2. **×Multiplicateur** (s'il y en a un) : à côté du montant, le multiplicateur apparaît dans une **volute de
+   fumée CSS** (petite zone, bien visible). Base = somme des orbes du spin ; **free spins = multiplicateur persistant**.
+3. **Multiplication** : le montant est multiplié avec **défilement de chiffres** (ex. `10 → 500`).
+4. **Envol** : le gain multiplié **s'envole** vers le cadre « Gain » et s'y additionne. Sans multiplicateur → envol direct.
+
+Implémenté via `winStackShow/Pos/RevealMult/FlyToGain` + `presentSpinWin()` (game.js), branché dans
+`animateRound` (accumulation), `spin()` et `runFreeSpins()`. **Position** du bandeau : `winStackPos()` le place
+**entièrement au-dessus du bord haut de la grille** (mesuré en px, pas de repère DOM pour la barre dorée du fond).
 
 ### Big Win — présentation à deux niveaux (décision utilisateur)
 
@@ -169,18 +201,28 @@ Implémenté via `bigWinTierInfo(u)` (game.js) + classes `.tier-grand/enorme/oly
 - **Réglages persistants (localStorage `got_settings`)** : mise, vitesse, sfx, musique, autoStopBig, autoStopFs.
 - **Autoplay** avec arrêts conditionnels : `autoStopBig` (stop sur gros gain), `autoStopFs` (stop sur free spins) —
   toggles dans le menu autoplay, persistés et restaurés.
-- **Barre minimaliste empilée + menu central (☰)** *(maj 2026-06-23)* : objectif utilisateur =
+- **Barre minimaliste empilée + menu central (☰)** *(maj 2026-06-24)* : objectif utilisateur =
   garder le moins de boutons possible à l'écran. Barre verticale :
-  - **Buy Bonus** en haut (en portrait, remonté ~63dvh, près de la barre dorée du bas de la grille).
-  - **SPIN** (agrandi : 168×92 desktop / 152×84 portrait) juste en dessous.
-  - **menu ☰** en bas (poussé en bas via `margin-top:auto` en portrait).
+  - **Buy Bonus** en haut · **SPIN** (agrandi : 168×92 desktop / 152×84 portrait) juste en dessous · **menu ☰** en bas.
+  - **Position portrait fiable** : le `top:Xdvh` était piégeux (les barres de Safari faussent `dvh` → Buy chevauchait
+    la grille). Remplacé par **`positionControls()` en JS** = placé sous le **bas RÉEL mesuré de la grille**
+    (`gridEl.bottom + ~22 % de la bande en dessous`), recalculé au load / resize / orientationchange. Fiable sur tout appareil.
   Tout le reste est dans le menu ☰ : **Mise** (− valeur +), **Ante** (ligne rouge, garde `.ante`),
   **Vitesse** (3 éclairs), **Tours automatiques** (10/25/50/100/∞ + stops, déroulant), **Sons** (déroulant),
-  **Gains**, **Plein écran** (PC). Menu aligné à droite ; clics internes ne ferment pas le menu (un handler
-  `stopPropagation` sur le conteneur `#mainMenu`).
+  **Gains**, **Plein écran** (PC uniquement — masqué sur tactile). Menu aligné à droite ; clics internes ne ferment
+  pas le menu (un handler `stopPropagation` sur le conteneur `#mainMenu`).
   - **Mise aussi modifiable depuis le panneau d'achat** (sélecteur − valeur + ; change la mise globale).
   - **Autoplay** : plus de bouton AUTO dédié → lancé depuis le menu ; pour **arrêter**, le bouton **SPIN
     devient STOP** pendant l'autoplay (reste actif, oxblood ; `setBusy` adapté). IDs préservés (handlers intacts).
+- **HUD Solde / Gain** *(maj 2026-06-23)* : label « Jetons » → **« Solde »** (les mentions « jetons virtuels »
+  des meta/disclaimer sont conservées : nature légale). Les pastilles utilisent le **cadre `hud_frame.png`** (§4).
+- **HUD free spins** *(maj 2026-06-23)* : le 3ᵉ panneau **« GAIN »** (visible seulement en FS) a été **supprimé**
+  (redondant avec le cadre Gain principal). Les 2 pills restants (**FREE SPINS**, **MVLTI TOTAL**) sont placés
+  **sous les cadres** Solde/Gain — un à gauche, un à droite.
+- **Fix bug d'affichage du bouton SPIN** *(maj 2026-06-23)* : `button:hover` (couleur or) repassait le vrai texte
+  « SPIN » du bouton (normalement transparent) → « SPIN » **en double** + état doré **collé** sur tactile.
+  Corrigé : `.spin:hover/:focus/:active` forcent `color`/`-webkit-text-fill-color` à transparent (seul le `::after`
+  en or martelé s'affiche).
 
 ---
 
@@ -250,6 +292,11 @@ Implémenté via `bigWinTierInfo(u)` (game.js) + classes `.tier-grand/enorme/oly
 - Les visuels/vidéos/sons sont produits en externe par l'utilisateur ; j'écris les **prompts**
   (ChatGPT / Suno / PixVerse) puis j'**intègre** les livrables.
 - Scripts helper dans `/tmp` (slice_symbols.py, measure.py, transp.py) — modifiés par l'utilisateur, **ne pas écraser**.
+- **Coéquipier, pas exécutant** : si une demande me semble une mauvaise idée, je le **dis** et j'explique pourquoi avant d'agir.
+- **Tout le travail math est reporté en FIN de projet** (calibrage de précision, PAR sheet) — sauf bugs math évidents.
+- **Vérification** : chaque changement visuel est prévisualisé en **Chrome headless** (captures) avant commit.
+  ⚠️ Piège connu : Chrome headless impose une largeur mini (~500 px) → screenshoter les portraits à **≥ 500 px** ;
+  et pour les positions liées aux barres du navigateur mobile (`dvh`), préférer la **mesure JS** (le headless n'a pas les barres Safari).
 
 ---
 
@@ -257,11 +304,19 @@ Implémenté via `bigWinTierInfo(u)` (game.js) + classes `.tier-grand/enorme/oly
 
 Du plus récent au plus ancien :
 
-- `c496f60` — Big Win (mega) : fin d'animation → décor sans la grille (portail vide) au lieu de la frame figée.
-- `c8c8aa3` — Paliers Big Win différenciés (couleur/intensité/durée) + menu unique hamburger (Sons & Gains).
-- `8e78aa3` — Big Win : 100×+ animation seule (sans panneau) · panneau 20-99× resserré · anticip dès 2 scatters en FS.
-- `a3d533e` — Big Win : le panneau (20-99×) reste affiché jusqu'au tap.
-- (avant : rebrand Curse of Hades, favicon/OG, écran tap-to-start, compression vidéos, panneau de gain, etc.)
+- `b0d7e85` — Big Win mega : la vidéo joue **en entier** (reveal à la fin réelle, tap pour passer).
+- `798eb07` / `5c9701a` / `fbae0d7` — Contrôles positionnés sous le bas RÉEL de la grille (`positionControls` JS) + grille agrandie (symboles non rognés).
+- `3cc19f6` — Ante dans le menu (rouge) · Buy+SPIN remontés · SPIN agrandi.
+- `c934b9a` — Barre minimaliste : Mise/Vitesse/Autospin dans le menu · mise dans le panneau d'achat.
+- `e43b677` / `213292b` — Présentation du gain : accumulation → ×mult en fumée → multiplication → envol.
+- `0f70f47` / `7db145c` / `6ed2c65` — HUD : cadres Solde/Gain (`hud_frame.png` détouré+tourné) · pills FS sous les cadres · label « Solde ».
+- `c43dcc4` — Fix bouton SPIN (texte dédoublé + doré collé sur tactile).
+- `380ab32` / `081b6d8` — Bouton « Plein écran » dans le menu (réservé PC).
+- `8e74360` / `e2ae90b` — Barre à deux niveaux → SPIN agrandi/centré (étape intermédiaire, remplacée depuis).
+- `a9cfe3f` / `6533647` / `cd96347` / `d38b04f` — Calibrage math (achat/ante/normal) + fix leak ante→FS + 1 scatter/colonne.
+- `240a37d` / `44c8f79` — Bouton vitesse compact (3 éclairs).
+- `088eae8` — Plafond max win combiné base+FS (5000×).
+- (avant : rebrand Curse of Hades, favicon/OG, écran tap-to-start, paliers Big Win, panneau de gain, etc.)
 
 > Convention : quand l'utilisateur dit « commit/push », je commit ET pousse sur GitHub. Chaque changement de
 > code observable est vérifié en **preview navigateur** (captures) avant commit, et le standalone est reconstruit.

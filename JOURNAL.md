@@ -229,6 +229,13 @@ Implémenté via `bigWinTierInfo(u)` (game.js) + classes `.tier-grand/enorme/oly
     devient STOP** pendant l'autoplay (reste actif, oxblood ; `setBusy` adapté). IDs préservés (handlers intacts).
 - **HUD Solde / Gain** *(maj 2026-06-23)* : label « Jetons » → **« Solde »** (les mentions « jetons virtuels »
   des meta/disclaimer sont conservées : nature légale). Les pastilles utilisent le **cadre `hud_frame.png`** (§4).
+- **Desktop compact — tout tient sans scroller** *(maj 2026-07-03)* : media query
+  `(min-width:761px) and (min-height:561px)` (n'affecte ni le portrait mobile ni le paysage téléphone) :
+  - la **scène se dimensionne selon la hauteur de fenêtre** : `max-width:min(1040px, (100vh − 380px) × 1.7744)` ;
+  - **cadres Solde/Gain rétrécis** (230 → 172 px) et, dès 980 px de large, **remontés au niveau du logo**
+    (marge négative, une rangée gagnée) ;
+  - **contrôles sur UNE rangée** : BUY BONUS · SPIN · ☰ ; header/footer resserrés.
+  Vérifié sans scroll (sonde scrollHeight) à 1000×650, 1366×768, 1680×1050, 2400×1200.
 - **HUD free spins** *(maj 2026-06-23)* : le 3ᵉ panneau **« GAIN »** (visible seulement en FS) a été **supprimé**
   (redondant avec le cadre Gain principal). Les 2 pills restants (**FREE SPINS**, **MVLTI TOTAL**) sont placés
   **sous les cadres** Solde/Gain — un à gauche, un à droite.

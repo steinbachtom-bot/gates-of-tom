@@ -615,6 +615,32 @@
     .footer-note{padding:4px 16px 14px; font-size:9px;}
   }
 
+  /* ===== DESKTOP compact : tout tient dans la fenêtre sans scroller =====
+     (min-height:561px exclut les téléphones en paysage, gérés au-dessus) */
+  @media (min-width:761px) and (min-height:561px){
+    header{padding:10px 12px 0;}
+    .logo{font-size:clamp(24px,3.4vw,36px);}
+    .subtitle{font-size:clamp(11px,1.6vw,14px); margin-top:3px;}
+    /* cadres Solde / Gain rétrécis */
+    .hudbar{margin-top:6px; padding:0 10px;}
+    .stat{flex:0 1 172px; max-width:172px;}
+    .stat .label{font-size:8px; letter-spacing:.2em;}
+    .stat .val{font-size:16px;}
+    .fs-hud{margin:4px 0 0;}
+    /* la scène se dimensionne selon la hauteur de fenêtre (7552/4256 ≈ 1.7744) */
+    .stage{margin:6px auto 0; max-width:min(1040px, calc((100vh - 380px) * 1.7744));}
+    /* contrôles sur UNE rangée : BUY BONUS · SPIN · ☰ */
+    .controls{flex-direction:row; align-items:center; gap:22px; padding:10px 12px 6px;}
+    .bar-buy,.bar-spin,.bar-menu{display:contents;}
+    .footer-note{padding:2px 16px 10px; font-size:9.5px;}
+  }
+  /* fenêtre assez large : les cadres montent au niveau du logo (une rangée gagnée) */
+  @media (min-width:980px) and (min-height:561px){
+    .hudbar{margin-top:-58px; pointer-events:none;}
+    .hudbar .stat{pointer-events:auto;}
+    .stage{margin-top:10px;}
+  }
+
   /* ===== PORTRAIT MOBILE : image plein écran, UI posée sur les bandes sombres ===== */
   @media (orientation:portrait) and (max-width:760px){
     .bg-wide{display:none;}

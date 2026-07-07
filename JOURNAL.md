@@ -148,6 +148,30 @@ Workflow récurrent : **l'utilisateur génère les visuels en externe** (ChatGPT
   ne s'affiche **plus** dans un badge central (`flashMultTotal` retiré) → il apparaît dans la **volute de fumée**
   de la nouvelle présentation du gain (ci-dessous).
 
+### Skip d'animation (« slam stop ») *(maj 2026-07-07)*
+
+Un appui pendant un tour **termine l'animation** immédiatement (montants finaux identiques, prouvé par
+harnais) : clic sur SPIN (désormais toujours actif : lance / SLAM / STOP en autoplay), tap sur la zone
+de jeu, ou Espace. Mécanisme : `requestSkip()` interrompt les `sleep()` en attente, met `dur()` à 0 et
+pose toutes les tuiles (les transitions CSS déjà lancées ne suivent pas `dur()`), `countUpEl` saute à
+la valeur finale ; `resetSkip()` au début de **chaque** tour (base, achat, chaque free spin) → le slam
+ne couvre que le tour en cours. Le toast RETRIGGER et le bilan de fin de session s'affichent toujours.
+L'écran Big Win garde son propre tap (Espace le déclenche aussi désormais). ⚠️ Piège corrigé (trouvé
+par vérification adversariale + test de mutation) : les `setTimeout` de sons programmés avant un slam
+rejouaient pendant le tour SUIVANT (sons scatter fantômes) → **jeton `roundSeq`** incrémenté par
+`resetSkip()`, vérifié par chaque timer différé.
+
+### Chute séquentielle des colonnes + sons scatter *(maj 2026-07-07)*
+
+- Les colonnes tombent **l'une après l'autre** (façon rouleaux, départs espacés de `dur(105)`, chute
+  `dur(320)`) au lieu du quasi-simultané. Durées **figées à l'entrée** de `dropIn` (un changement de
+  vitesse en vol s'applique au tour suivant — sinon la barrière de fin sous-attendait).
+- **`scatter.wav` activé** : joue à l'atterrissage de chaque colonne contenant un scatter (+ petit
+  `land` par colonne + pulsation brève du scatter), dans les trois chemins : chute normale,
+  anticipation (pré-phase et révélation — pas de double son, ensembles disjoints), et **cascade**
+  (nouveau scatter en refill). L'ancien `Snd.scatter()` global du buy est retiré (les 4 colonnes à
+  scatter de l'achat sonnent individuellement). `pop`/`win` muets pendant un slam (pas de rafale).
+
 ### Présentation du gain — accumulation → ×mult en fumée → multiplication → envol *(maj 2026-06-23)*
 
 Nouveau déroulé (jeu de base **ET** free spins), décidé avec l'utilisateur. Le cadre « Gain » ne bouge

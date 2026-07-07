@@ -234,7 +234,25 @@ const SPEEDS = [
   { name: "RAPIDE", mult: 1.5 },
   { name: "TURBO", mult: 1.0 },
 ];
-const dur = (ms) => Math.round(ms * SPEEDS[state.speedIndex].mult);
+/* ---- Skip d'animation (« slam stop ») : un appui pendant le tour termine l'animation ----
+   requestSkip() interrompt tous les sleep() en attente et met dur() à 0 pour le reste du
+   tour ; resetSkip() est appelé au début de chaque tour (base, achat, chaque free spin). */
+let skipRequested = false;
+let skipResolvers = [];
+let roundSeq = 0;   // jeton de tour : invalide les timers différés (sons d'atterrissage) d'un tour précédent
+function requestSkip() {
+  if (!state.busy || skipRequested) return;                 // rien à passer
+  if (document.body && document.body.classList.contains("bigwin-active")) return; // l'écran Big Win gère son propre tap
+  skipRequested = true;
+  // Les transitions CSS déjà lancées ne suivent pas dur() : on pose toutes les tuiles immédiatement,
+  // sinon les rouleaux continuent de tomber ~1 s après un slam sur un tour sans gain.
+  gridEl.querySelectorAll(".tile").forEach((t) => { t.style.transition = "none"; t.style.transform = "translateY(0)"; });
+  const rs = skipResolvers; skipResolvers = [];
+  rs.forEach((r) => r());
+}
+function resetSkip() { skipRequested = false; roundSeq++; }
+
+const dur = (ms) => (skipRequested ? 0 : Math.round(ms * SPEEDS[state.speedIndex].mult));
 
 // --- DOM refs ---
 const $ = (id) => document.getElementById(id);
@@ -274,7 +292,19 @@ const SYM_NAME = {
   SCATTER: "Orbe d'Hadès",
 };
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// sleep interruptible : si le joueur « slam » (requestSkip), toutes les attentes en cours
+// se terminent immédiatement et les suivantes sont instantanées jusqu'au resetSkip().
+const sleep = (ms) => new Promise((res) => {
+  if (skipRequested) return void setTimeout(res, 0);
+  const t = setTimeout(finish, ms);
+  function finish() {
+    clearTimeout(t);
+    const i = skipResolvers.indexOf(finish);
+    if (i >= 0) skipResolvers.splice(i, 1);
+    res();
+  }
+  skipResolvers.push(finish);
+});
 const round2 = (n) => Math.round(n * 100) / 100;
 // Tolérance flottante pour les comparaisons de gains en unités de mise (le clamp du cap
 // combiné introduit ~1 ulp d'erreur : sans epsilon, « fsWin >= fsCap » peut rater le cap).
@@ -355,6 +385,32 @@ async function dropIn(cells, animate = true, allowAnticip = true) {
       if (cells[idx(c, r)].t === "SCATTER" && tileAt[idx(c, r)]) tileAt[idx(c, r)].classList.add("anticip");
     }
   };
+  // Index du scatter de la colonne (max 1 par colonne), -1 sinon.
+  const colScatter = (c) => {
+    for (let r = 0; r < CFG.ROWS; r++) if (cells[idx(c, r)].t === "SCATTER") return idx(c, r);
+    return -1;
+  };
+  // Atterrissage d'une colonne : petit « land » + SON SCATTER si elle en contient un
+  // (+ pulsation brève du scatter hors mode anticipation). Silencieux après un slam,
+  // et INVALIDÉ si le tour a changé (jeton roundSeq) : un timer programmé avant un slam
+  // ne doit jamais rejouer pendant le tour suivant (sons/pulses fantômes).
+  const myRound = roundSeq;
+  const landCol = (c, pulse) => {
+    if (skipRequested || myRound !== roundSeq) return;
+    Snd.land();
+    const si = colScatter(c);
+    if (si >= 0) {
+      Snd.scatter();
+      const t = tileAt[si];
+      if (t && pulse) { t.classList.add("anticip"); setTimeout(() => t.classList.remove("anticip"), 700); }
+    }
+  };
+  const FALL = 320;                          // durée de chute d'une colonne
+  const STAG = 105;                          // décalage entre deux colonnes (l'une APRÈS l'autre)
+  const SETTLE = (CFG.ROWS - 1) * 22;        // vague interne de la colonne (bas → haut)
+  // Durées figées MAINTENANT : un changement de vitesse en pleine chute ne désynchronise
+  // pas la barrière de fin vs les transitions CSS/timers déjà émis (il s'applique au tour suivant).
+  const tLand = dur(FALL + SETTLE), tStag = dur(STAG);
 
   // Colonne de déclenchement de l'anticipation : où le scatter « avant-dernier »
   // apparaît (de gauche à droite), s'il reste au moins une colonne à révéler après.
@@ -370,18 +426,27 @@ async function dropIn(cells, animate = true, allowAnticip = true) {
   }
 
   if (trigCol < 0) {
-    // Cas normal : toutes les colonnes tombent (gauche -> droite, léger décalage).
-    for (let c = 0; c < CFG.REELS; c++) dropCol(c, 1, c * 42);
-    await sleep(dur(660));
-    Snd.land();
+    // Cas normal : les colonnes tombent SÉQUENTIELLEMENT (façon rouleaux, gauche → droite) ;
+    // chaque atterrissage joue son land + le son scatter si la colonne en contient un.
+    for (let c = 0; c < CFG.REELS; c++) {
+      dropCol(c, FALL / 380, 0);
+      const col = c;
+      setTimeout(() => landCol(col, true), tLand);
+      await sleep(tStag);
+    }
+    await sleep(Math.max(0, tLand - tStag) + dur(60));   // laisse la dernière colonne se poser
     return;
   }
 
   // --- ANTICIPATION DE ROULEAUX (pendant la chute) ---
-  // 1) On tombe les colonnes 0..trigCol ; les suivantes restent cachées au-dessus (cases vides).
-  for (let c = 0; c <= trigCol; c++) dropCol(c, 1, c * 42);
-  await sleep(dur(380 + trigCol * 42 + (CFG.ROWS - 1) * 22 + 60));
-  Snd.land();
+  // 1) Colonnes 0..trigCol séquentielles ; les suivantes restent cachées au-dessus (cases vides).
+  for (let c = 0; c <= trigCol; c++) {
+    dropCol(c, FALL / 380, 0);
+    const col = c;
+    setTimeout(() => landCol(col, false), tLand);   // pulse géré par pulseCol juste après
+    await sleep(tStag);
+  }
+  await sleep(Math.max(0, tLand - tStag) + dur(40));
   // 2) Pulsation des scatters affichés + on assombrit le reste, pause de tension.
   gridEl.classList.add("anticip");
   for (let c = 0; c <= trigCol; c++) pulseCol(c);
@@ -391,7 +456,7 @@ async function dropIn(cells, animate = true, allowAnticip = true) {
   for (let c = trigCol + 1; c < CFG.REELS; c++) {
     dropCol(c, 1.35, 0);
     await sleep(dur(600));
-    Snd.land();
+    landCol(c, false);                     // land + son scatter si la colonne révélée en contient un
     pulseCol(c);                           // pulse aussi un éventuel 4e scatter qui tombe
     if (c < CFG.REELS - 1) await sleep(dur(380));
   }
@@ -404,7 +469,7 @@ async function dropIn(cells, animate = true, allowAnticip = true) {
 async function clearWinners(winCells) {
   winCells.forEach((i) => { const t = tileAt[i]; if (t) t.classList.add("winglow"); });
   await sleep(dur(220));
-  Snd.pop();
+  if (!skipRequested) Snd.pop();   // pas de rafale de pops empilés pendant un slam multi-cascades
   winCells.forEach((i) => { const t = tileAt[i]; if (t) { puffSmoke(t); t.classList.add("popping"); } });
   await sleep(dur(430));
   winCells.forEach((i) => { const t = tileAt[i]; if (t) t.remove(); tileAt[i] = null; });
@@ -421,6 +486,7 @@ async function tumbleTo(nextCells) {
 
   const next = new Array(CFG.CELLS).fill(null);
   const created = [];
+  let newScatter = null;                        // scatter arrivé PENDANT la cascade (refill)
   for (let c = 0; c < CFG.REELS; c++) {
     const surv = [];
     for (let r = 0; r < CFG.ROWS; r++) { const t = tileAt[idx(c, r)]; if (t) surv.push(t); }
@@ -430,6 +496,7 @@ async function tumbleTo(nextCells) {
       placeAt(t, c, r);
       gridEl.appendChild(t);
       next[idx(c, r)] = t; created.push({ t, r });
+      if (nextCells[idx(c, r)].t === "SCATTER") newScatter = t;
     }
     surv.forEach((t, k) => {                    // survivants vers le bas
       const r = need + k; placeAt(t, c, r); next[idx(c, r)] = t;
@@ -459,6 +526,13 @@ async function tumbleTo(nextCells) {
     t.style.transform = "translateY(0)";
   });
   await sleep(dur(440) + maxDelay);
+  // un scatter tombé en cascade se signale (son + pulsation brève)
+  if (newScatter && !skipRequested) {
+    Snd.scatter();
+    const n = newScatter;
+    n.classList.add("anticip");
+    setTimeout(() => n.classList.remove("anticip"), 700);   // < fenêtre avant la cascade suivante même en TURBO
+  }
 }
 
 /* Bouffee de fumee posee sur la grille (deborde la tuile). */
@@ -507,6 +581,7 @@ function countUpEl(el, from, to, ms) {
   const t0 = performance.now();
   return new Promise((res) => {
     function step(nowT) {
+      if (skipRequested) { el.textContent = fmt(to); res(); return; }   // slam : valeur finale directe
       const k = Math.min(1, (nowT - t0) / ms);
       const e = 1 - Math.pow(1 - k, 3);
       el.textContent = fmt(from + (to - from) * e);
@@ -724,7 +799,7 @@ async function animateRound(round) {
   let prevUnit = 0;
   while (frames[i] && frames[i].winCells.length) {
     unitWin += frames[i].stepWin;
-    Snd.win(frames[i].stepWin);
+    if (!skipRequested) Snd.win(frames[i].stepWin);
     // accumulation du gain dans la pile au-dessus de la grille (additionne les cascades)
     if (hasLayout()) {
       if (i === 0) winStackShow(0);
@@ -904,6 +979,7 @@ async function runFreeSpins(bought = false, startWin = 0) {
   try {
   while (spins > 0) {
     spins--;
+    resetSkip();                       // le slam ne couvre QUE le tour en cours (pas toute la session)
     const r = generateRound();
     await animateRound(r);
     // révélation des orbes du tour (ils s'ajoutent au multiplicateur persistant)
@@ -929,10 +1005,11 @@ async function runFreeSpins(bought = false, startWin = 0) {
     setHud();                            // maj compteur de tours + multiplicateur persistant
     if (r.multSum > 0) pulsePill($("fsMult"));
     if (added > 0) await sleep(dur(150));
-    if (retrig) { Snd.fsTrigger(); await showStageToast("RETRIGGER", "+" + CFG.FS_RETRIG + " FREE SPINS", 1400); }
+    if (retrig) { resetSkip(); Snd.fsTrigger(); await showStageToast("RETRIGGER", "+" + CFG.FS_RETRIG + " FREE SPINS", 1400); }   // l'annonce +5 tours s'affiche même après un slam
     if (capped) break;
   }
 
+  resetSkip();                         // le bilan de session s'affiche toujours (même après un slam)
   await showStageToast("TOURS GRATUITS TERMINÉS", fmt(fsWin * bet()) + " jetons", 2400);
   } finally {
     // restauré sur TOUS les chemins (exception comprise) : anticip, ante, HUD, musique
@@ -953,6 +1030,7 @@ async function spin() {
   if (state.busy) return false;
   if (state.balance < round2(spinCost())) { flashInsufficient(); return false; }
   setBusy(true);
+  resetSkip();                        // nouveau tour : le slam du tour précédent ne s'applique plus
   spinBtn.classList.add("spinning");
   state.lastBigWin = false; state.lastFs = false;   // drapeaux pour l'autoplay
   try {
@@ -1012,8 +1090,7 @@ function makeTriggerGrid() {
 async function animateTriggerSpin() {
   const cells = makeTriggerGrid();
   Snd.spin();
-  await dropIn(cells, true, false);    // achat : pas d'anticipation (révélation directe)
-  Snd.scatter();
+  await dropIn(cells, true, false);    // achat : pas d'anticipation — chaque colonne à scatter sonne à l'atterrissage
   if (hasLayout()) {
     for (let i = 0; i < CFG.CELLS; i++) {
       if (cells[i].t === "SCATTER" && tileAt[i]) tileAt[i].classList.add("winglow");
@@ -1027,6 +1104,7 @@ async function buyBonus() {
   if (state.busy || state.autoActive) return;
   if (state.balance < round2(buyCost())) { flashInsufficient(); return; }
   setBusy(true);
+  resetSkip();
   try {
     setAnte(false);                    // l'achat ignore l'ante
     state.balance = round2(state.balance - round2(buyCost()));
@@ -1048,7 +1126,7 @@ async function buyBonus() {
    autoplay : il devient STOP. */
 function updateLocks() {
   const lock = state.busy || state.autoActive;
-  spinBtn.disabled = state.busy && !state.autoActive;
+  spinBtn.disabled = false;   // SPIN toujours actif : lance un tour / SLAM pendant un tour / STOP en autoplay
   anteBtn.disabled = lock;
   buyBtn.disabled = lock;
   ["betUp", "betDown", "buyBetUp", "buyBetDown"].forEach((id) => {
@@ -1102,6 +1180,7 @@ async function runAuto(token) {
       if (state.auto > 0) state.auto--;
       updateAutoUI();
       const played = await spin();
+      resetSkip();   // un slam ne couvre que SON tour : la pause inter-tours reste normale
       if (token !== autoToken || !state.autoActive) break;  // arrêt manuel pendant le spin
       if (!played) {                            // spin refusé (ne devrait pas arriver avec les verrous) :
         if (state.auto >= 0) state.auto++;      // on rend le tour consommé et on s'arrête proprement
@@ -1396,9 +1475,15 @@ ptOverlay.addEventListener("click", (e) => { if (e.target === ptOverlay) ptOverl
 // SPIN / Espace : pendant l'autoplay → arrête l'autoplay ; sinon → lance un tour
 function onSpinPress() {
   if (state.autoActive) { Snd.click(); stopAuto(); return; }
+  if (state.busy) { requestSkip(); return; }   // tour en cours → termine l'animation (slam)
   spin();
 }
 spinBtn.addEventListener("click", onSpinPress);
+// Taper la zone de jeu pendant un tour = slam aussi (l'écran Big Win garde son propre tap)
+$("stage").addEventListener("click", () => {
+  if (winBanner.classList.contains("show")) return;
+  requestSkip();
+});
 // La barre Espace est inerte quand un écran/panneau est ouvert (achat, gains, solde insuffisant,
 // menu, écran d'accueil, chargement) : sinon elle lançait un spin DERRIÈRE l'overlay.
 function uiBlocked() {
@@ -1413,6 +1498,7 @@ document.addEventListener("keydown", (e) => {
   e.preventDefault();
   if (e.repeat) return;              // maintenir Espace ne mitraille pas (stop puis spin non voulu)
   kickAudio();                       // l'audio démarre aussi au 1er geste clavier
+  if (winBanner.classList.contains("show")) { winBanner.click(); return; }   // Espace = tap sur l'écran Big Win
   if (uiBlocked()) return;
   onSpinPress();
 });

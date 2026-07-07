@@ -2,7 +2,7 @@
 
 > Récapitulatif de tout ce qui a été fait, et des décisions prises.
 > Projet : slot machine « pay-anywhere » type Gates of Olympus — **jetons virtuels uniquement**.
-> Dernière mise à jour : 2026-07-03.
+> Dernière mise à jour : 2026-07-07.
 
 ---
 
@@ -229,13 +229,18 @@ Implémenté via `bigWinTierInfo(u)` (game.js) + classes `.tier-grand/enorme/oly
     devient STOP** pendant l'autoplay (reste actif, oxblood ; `setBusy` adapté). IDs préservés (handlers intacts).
 - **HUD Solde / Gain** *(maj 2026-06-23)* : label « Jetons » → **« Solde »** (les mentions « jetons virtuels »
   des meta/disclaimer sont conservées : nature légale). Les pastilles utilisent le **cadre `hud_frame.png`** (§4).
-- **Desktop compact — tout tient sans scroller** *(maj 2026-07-03)* : media query
+- **Desktop compact — tout tient sans scroller** *(maj 2026-07-03, validé par l'utilisateur)* : media query
   `(min-width:761px) and (min-height:561px)` (n'affecte ni le portrait mobile ni le paysage téléphone) :
-  - la **scène se dimensionne selon la hauteur de fenêtre** : `max-width:min(1040px, (100vh − 380px) × 1.7744)` ;
-  - **cadres Solde/Gain rétrécis** (230 → 172 px) et, dès 980 px de large, **remontés au niveau du logo**
-    (marge négative, une rangée gagnée) ;
+  - la **scène se dimensionne selon la hauteur de fenêtre** : `max-width:min(1040px, (100vh − 260px) × 1.7744)` ;
+  - **cadres Solde/Gain miniatures (132×74 px) posés SUR la scène**, coins haut-gauche / haut-droit, inset 10 px —
+    en `position:fixed`, largeur calée sur la **même formule que la scène** → alignement exact à toute taille
+    de fenêtre. Les pills free spins s'affichent juste **sous les cadres** (mêmes bords). Header en px fixes
+    (positionnement déterministe).
   - **contrôles sur UNE rangée** : BUY BONUS · SPIN · ☰ ; header/footer resserrés.
-  Vérifié sans scroll (sonde scrollHeight) à 1000×650, 1366×768, 1680×1050, 2400×1200.
+  - ⚠️ Piège CSS rencontré : `padding:0 19%` sur `.stat` se calcule sur la **largeur du conteneur** (hudbar
+    ~1020 px) → min-width implicite de 388 px qui **bat max-width**. Fix : padding en px fixes + `min-width:0`
+    en desktop.
+  Vérifié sans scroll (sonde scrollHeight) et alignement au pixel à 1000×650, 1366×768, 1680×1050, 2400×1200.
 - **HUD free spins** *(maj 2026-06-23)* : le 3ᵉ panneau **« GAIN »** (visible seulement en FS) a été **supprimé**
   (redondant avec le cadre Gain principal). Les 2 pills restants (**FREE SPINS**, **MVLTI TOTAL**) sont placés
   **sous les cadres** Solde/Gain — un à gauche, un à droite.
@@ -362,6 +367,14 @@ calibrage historiques désynchronisés (calibrate/tune/finals), verrou d'écritu
   sans attendre. Le standalone `GATES_OF_TOM.html` n'est **plus versionné** : on le reconstruit en local
   (`python3 build.py`) quand on en a besoin (le build sert aussi de contrôle d'intégrité des références).
 - **`business/` ne doit JAMAIS être versionné** (repo public — données personnelles). Il est dans `.gitignore`.
+- **Déploiement GitHub Pages** *(maj 2026-07-03)* : `.nojekyll` à la racine (site statique pur, builds plus
+  rapides/fiables). Les déploiements Pages peuvent échouer de façon **transitoire** côté GitHub (vu 2×) :
+  si « je ne vois pas de changement », vérifier d'abord le dernier run (`api.github.com/repos/…/actions/runs`)
+  et le contenu réellement servi (curl + grep d'un marqueur), puis re-déclencher par un commit. Penser aussi
+  au **cache navigateur** (~10 min sur Pages → rechargement forcé Cmd+Shift+R).
+- **Génération d'assets via fal.ai** *(maj 2026-07-03)* : clé API dans `~/.config/fal/key` (jamais dans le
+  repo). Je peux générer et intégrer directement (outpainting, upscale…) — procédés archivés dans
+  `assets/DECOR_PROMPTS.md`.
 - Les visuels/vidéos/sons sont produits en externe par l'utilisateur ; j'écris les **prompts**
   (ChatGPT / Suno / PixVerse) puis j'**intègre** les livrables.
 - Scripts helper dans `/tmp` (slice_symbols.py, measure.py, transp.py) — modifiés par l'utilisateur, **ne pas écraser**.
@@ -377,6 +390,13 @@ calibrage historiques désynchronisés (calibrate/tune/finals), verrou d'écritu
 
 Du plus récent au plus ancien :
 
+- `46ae5dd` — Desktop : cadres Solde/Gain **miniatures dans les coins de la scène** (132×74, inset 10 px).
+- `f364d7f` — Pages : `.nojekyll` + redéploiement (échec transitoire GitHub sur le deploy précédent).
+- `fbb4859` — Desktop compact : tout visible **sans scroller** (scène dimensionnée par la hauteur de fenêtre).
+- `d8c7533` — **Fond desktop plein écran généré via fal.ai** (outpainting FLUX Fill + ESRGAN — 1er asset API).
+- `081878b` — **Audit complet** : correction de tous les points (autoplay durci, solde persistant, fontes
+  auto-hébergées, Espace/overlays, build.py blindé, smoke_test réparé, ~215 lignes mortes retirées…).
+- `f659445` — Retrait de `business/` + standalone du suivi git (**historique purgé**, .git 1,6 GiB → 46 Mo).
 - `b0d7e85` — Big Win mega : la vidéo joue **en entier** (reveal à la fin réelle, tap pour passer).
 - `798eb07` / `5c9701a` / `fbae0d7` — Contrôles positionnés sous le bas RÉEL de la grille (`positionControls` JS) + grille agrandie (symboles non rognés).
 - `3cc19f6` — Ante dans le menu (rouge) · Buy+SPIN remontés · SPIN agrandi.
